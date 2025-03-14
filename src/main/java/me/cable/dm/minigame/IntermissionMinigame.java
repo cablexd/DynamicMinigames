@@ -1,0 +1,168 @@
+package me.cable.dm.minigame;
+
+import me.cable.dm.DynamicMinigames;
+import me.cable.dm.MinigameManager;
+import me.cable.dm.option.*;
+import me.cable.dm.util.Utils;
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.entity.Player;
+import org.bukkit.event.HandlerList;
+import org.bukkit.event.Listener;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.*;
+
+public abstract class IntermissionMinigame extends Minigame implements Listener {
+
+    private static boolean initialized = false;
+
+    protected final IntegerOption countdownOption;
+    protected final StringOption countdownMessageOption;
+    protected final ActionsOption waitingActionsOption;
+    protected final IntegerOption waitingMessagePeriod;
+    protected final IntegerOption minPlayersOption;
+    protected final RegionOption waitingRegionOption;
+    protected final LocationOption endPositionOption;
+    protected final ActionsOption onStartOption;
+    protected final ActionsOption onEndOption;
+
+    private @NotNull GameState gameState = GameState.DISABLED;
+    private int countdown;
+
+    public IntermissionMinigame() {
+        countdownOption = registerOption("countdown", new IntegerOption());
+        countdownMessageOption = registerOption("countdown_message", new StringOption());
+        waitingActionsOption = registerOption("waiting_actions", new ActionsOption());
+        waitingMessagePeriod = registerOption("waiting_message_period", new IntegerOption());
+        minPlayersOption = registerOption("min_players", new IntegerOption());
+        waitingRegionOption = registerOption("waiting_region", new RegionOption());
+        endPositionOption = registerOption("end_position", new LocationOption());
+        onStartOption = registerOption("on_start", new ActionsOption());
+        onEndOption = registerOption("on_end", new ActionsOption());
+    }
+
+    public static void initialize(@NotNull DynamicMinigames dynamicMinigames) {
+        if (initialized) {
+            throw new IllegalStateException("Already initialized");
+        }
+
+        MinigameManager minigameManager = dynamicMinigames.getMinigameManager();
+        initialized = true;
+
+        Bukkit.getScheduler().scheduleSyncRepeatingTask(dynamicMinigames, () -> {
+            for (Minigame minigame : minigameManager.getAllMinigames()) {
+                if (!(minigame instanceof IntermissionMinigame intermissionMinigame)) {
+                    continue;
+                }
+
+                GameState gameState = intermissionMinigame.getGameState();
+
+                // check that minigame is enabled and end if disabled while running
+                if (gameState == GameState.DISABLED) {
+                    if (intermissionMinigame.isEnabled()) {
+                        intermissionMinigame.gameState = GameState.WAITING;
+                    }
+                } else if (!intermissionMinigame.isEnabled()) {
+                    if (gameState == GameState.RUNNING) {
+                        intermissionMinigame.end();
+                    }
+
+                    intermissionMinigame.gameState = GameState.DISABLED;
+                    continue;
+                }
+                if (gameState == GameState.RUNNING) {
+                    continue;
+                }
+
+                List<Player> waitingPlayers = intermissionMinigame.waitingRegionOption.get().getPlayers();
+                gameState = intermissionMinigame.getGameState();
+
+                if (waitingPlayers.size() >= intermissionMinigame.minPlayersOption.get()) {
+                    // have enough players: do countdown
+                    if (gameState == GameState.WAITING) {
+                        intermissionMinigame.gameState = GameState.COUNTDOWN;
+                        intermissionMinigame.countdown = intermissionMinigame.countdownOption.get();
+                    }
+
+                    if (intermissionMinigame.countdown > 0) {
+                        for (Player player : waitingPlayers) {
+                            player.sendMessage(Utils.formatColor(intermissionMinigame.countdownMessageOption.get()
+                                    .replace("{seconds}", intermissionMinigame.countdown + "")
+                                    .replace("{s}", intermissionMinigame.countdown == 1 ? "" : "s")));
+                        }
+                    } else {
+                        // countdown is up: start minigame
+                        intermissionMinigame.gameState = GameState.RUNNING;
+                        intermissionMinigame.onStartOption.actions().run(waitingPlayers);
+                        Bukkit.getPluginManager().registerEvents(intermissionMinigame, dynamicMinigames);
+                        intermissionMinigame.start(waitingPlayers);
+                    }
+
+                    intermissionMinigame.countdown--;
+                } else {
+                    // not enough players: go to waiting state
+                    if (gameState == GameState.COUNTDOWN) {
+                        intermissionMinigame.gameState = GameState.WAITING;
+                        intermissionMinigame.countdown = 0;
+                    }
+                    // run waiting actions periodically
+                    if (--intermissionMinigame.countdown <= 0) {
+                        intermissionMinigame.waitingActionsOption.actions().run(waitingPlayers);
+                        intermissionMinigame.countdown = intermissionMinigame.waitingMessagePeriod.get();
+                    }
+                }
+            }
+        }, 0, 20);
+    }
+
+    public boolean isEnabled() {
+        return false;
+    }
+
+    public abstract void start(@NotNull List<Player> players);
+
+    protected final void end(@NotNull List<Player> teleportOnEnd) {
+        stopTasks();
+
+        // unregister listeners
+        HandlerList.unregisterAll(this);
+
+        // teleport players
+        Location location = endPositionOption.get().location();
+
+        if (location.isWorldLoaded()) {
+            for (Player player : teleportOnEnd) {
+                player.teleport(location);
+            }
+        }
+
+        // clean up
+        cleanup();
+        onEndOption.actions().run(teleportOnEnd);
+        gameState = GameState.WAITING;
+    }
+
+    public final void end() {
+        end(Collections.emptyList());
+    }
+
+    public void tick() {
+        // empty
+    }
+
+    public void cleanup() {
+        // empty
+    }
+
+    public @NotNull GameState getGameState() {
+        return gameState;
+    }
+
+    public enum GameState {
+        DISABLED,
+        WAITING,
+        COUNTDOWN,
+        RUNNING
+    }
+}

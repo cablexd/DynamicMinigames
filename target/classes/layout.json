@@ -1,0 +1,11 @@
+{
+  "minigames": {
+    "minigameId": [
+      {
+        "options": {
+          "optionId": "serialized value"
+        }
+      }
+    ]
+  }
+}

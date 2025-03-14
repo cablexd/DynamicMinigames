@@ -1,0 +1,15 @@
+name: DynamicMinigames
+version: '1.0-SNAPSHOT'
+main: me.cable.dm.DynamicMinigames
+api-version: '1.21'
+
+depend:
+  - ActionsAPI
+
+commands:
+  dynamicminigames:
+    aliases:
+      - "dm"
+  minigame:
+    aliases:
+      - "mg"

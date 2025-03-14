@@ -1,0 +1,9 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="DynamicMinigames">
+    <output-path>$PROJECT_DIR$/../CrossoverTesting/plugins</output-path>
+    <root id="archive" name="DynamicMinigames.jar">
+      <element id="module-output" name="dynamicminigames" />
+      <element id="library" level="project" name="Maven: org.jetbrains:annotations:RELEASE" />
+    </root>
+  </artifact>
+</component>
