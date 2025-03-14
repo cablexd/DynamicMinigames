@@ -1,6 +1,0 @@
-minigames:
-  minigameId:
-    - options:
-        optionId: "option value"
-        optionId2: "option value"
-      otherMinigameProperty: "some value"
