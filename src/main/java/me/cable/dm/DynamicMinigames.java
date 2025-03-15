@@ -14,6 +14,11 @@ public final class DynamicMinigames extends JavaPlugin {
     private MinigameManager minigameManager;
     private MinigameSerializer minigameSerializer;
 
+    /*
+        TODO:
+        default values
+     */
+
     @Override
     public void onEnable() {
         initializeHandlers();

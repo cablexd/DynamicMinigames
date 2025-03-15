@@ -1,6 +1,7 @@
 package me.cable.dm;
 
 import me.cable.dm.minigame.Minigame;
+import me.cable.dm.minigame.PassiveMinigame;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -74,6 +75,11 @@ public final class MinigameManager {
 
         Minigame minigame = registeredMinigames.get(minigameType).get();
         minigames.computeIfAbsent(minigameType, v -> new HashMap<>()).put(minigameId, minigame);
+
+        if (minigame instanceof PassiveMinigame passiveMinigame) {
+            passiveMinigame.start();
+        }
+
         return minigame;
     }
 

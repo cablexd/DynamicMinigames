@@ -9,6 +9,7 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.IOException;
@@ -82,7 +83,11 @@ public class MinigameSerializer {
         }
     }
 
-    private @NotNull Minigame loadFromFile(@NotNull String minigameType, @NotNull File file) {
+    private @Nullable Minigame loadFromFile(@NotNull String minigameType, @NotNull File file) {
+        if (!minigameManager.getRegisteredMinigames().containsKey(minigameType)) {
+            return null;
+        }
+
         Minigame minigame = minigameManager.getRegisteredMinigames().get(minigameType).get();
         FileConfiguration config = YamlConfiguration.loadConfiguration(file);
 
@@ -138,11 +143,13 @@ public class MinigameSerializer {
                         minigameId = minigameId.substring(0, minigameId.length() - 4);
                         Minigame minigame = loadFromFile(minigameType, minigameFile);
 
-                        if (minigame instanceof PassiveMinigame passiveMinigame) {
-                            passiveMinigame.start();
-                        }
+                        if (minigame != null) {
+                            if (minigame instanceof PassiveMinigame passiveMinigame) {
+                                passiveMinigame.start();
+                            }
 
-                        minigameManager.getMinigames().computeIfAbsent(minigameType, v -> new HashMap<>()).put(minigameId, minigame);
+                            minigameManager.getMinigames().computeIfAbsent(minigameType, v -> new HashMap<>()).put(minigameId, minigame);
+                        }
                     }
                 }
             }

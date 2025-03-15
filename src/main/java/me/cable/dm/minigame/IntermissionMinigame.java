@@ -3,9 +3,9 @@ package me.cable.dm.minigame;
 import me.cable.dm.DynamicMinigames;
 import me.cable.dm.MinigameManager;
 import me.cable.dm.option.*;
-import me.cable.dm.util.Utils;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
@@ -18,10 +18,11 @@ public abstract class IntermissionMinigame extends Minigame implements Listener 
     private static boolean initialized = false;
 
     protected final IntegerOption countdownOption;
-    protected final StringOption countdownMessageOption;
-    protected final ActionsOption waitingActionsOption;
-    protected final IntegerOption waitingMessagePeriod;
     protected final IntegerOption minPlayersOption;
+    protected final IntegerOption waitingMessagePeriod;
+    protected final ActionsOption countdownActionsOption;
+    protected final ActionsOption waitingActionsOption;
+
     protected final RegionOption waitingRegionOption;
     protected final LocationOption endPositionOption;
     protected final ActionsOption onStartOption;
@@ -32,10 +33,11 @@ public abstract class IntermissionMinigame extends Minigame implements Listener 
 
     public IntermissionMinigame() {
         countdownOption = registerOption("countdown", new IntegerOption());
-        countdownMessageOption = registerOption("countdown_message", new StringOption());
-        waitingActionsOption = registerOption("waiting_actions", new ActionsOption());
-        waitingMessagePeriod = registerOption("waiting_message_period", new IntegerOption());
         minPlayersOption = registerOption("min_players", new IntegerOption());
+        waitingMessagePeriod = registerOption("waiting_message_period", new IntegerOption());
+        countdownActionsOption = registerOption("countdown_actions", new ActionsOption());
+        waitingActionsOption = registerOption("waiting_actions", new ActionsOption());
+
         waitingRegionOption = registerOption("waiting_region", new RegionOption());
         endPositionOption = registerOption("end_position", new LocationOption());
         onStartOption = registerOption("on_start", new ActionsOption());
@@ -86,11 +88,10 @@ public abstract class IntermissionMinigame extends Minigame implements Listener 
                     }
 
                     if (intermissionMinigame.countdown > 0) {
-                        for (Player player : waitingPlayers) {
-                            player.sendMessage(Utils.formatColor(intermissionMinigame.countdownMessageOption.get()
-                                    .replace("{seconds}", intermissionMinigame.countdown + "")
-                                    .replace("{s}", intermissionMinigame.countdown == 1 ? "" : "s")));
-                        }
+                        intermissionMinigame.countdownActionsOption.actions()
+                                .placeholder("seconds", intermissionMinigame.countdown)
+                                .placeholder("s", intermissionMinigame.countdown == 1 ? "" : "s")
+                                .run(waitingPlayers);
                     } else {
                         // countdown is up: start minigame
                         intermissionMinigame.gameState = GameState.RUNNING;
@@ -108,7 +109,10 @@ public abstract class IntermissionMinigame extends Minigame implements Listener 
                     }
                     // run waiting actions periodically
                     if (--intermissionMinigame.countdown <= 0) {
-                        intermissionMinigame.waitingActionsOption.actions().run(waitingPlayers);
+                        intermissionMinigame.waitingActionsOption.actions()
+                                .placeholder("min_players", intermissionMinigame.minPlayersOption.get())
+                                .placeholder("players", waitingPlayers.size())
+                                .run(waitingPlayers);
                         intermissionMinigame.countdown = intermissionMinigame.waitingMessagePeriod.get();
                     }
                 }

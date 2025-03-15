@@ -1,15 +1,11 @@
 package me.cable.dm.minigame.provided;
 
 import me.cable.dm.minigame.PassiveMinigame;
-import me.cable.dm.option.BlockRegionListOption;
-import me.cable.dm.option.IntegerListOption;
-import me.cable.dm.option.IntegerOption;
+import me.cable.dm.option.*;
 import me.cable.dm.option.abs.AbstractOption;
 import me.cable.dm.util.BlockRegion;
 import me.cable.dm.util.Region;
-import org.bukkit.Bukkit;
 import org.bukkit.World;
-import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
@@ -18,17 +14,19 @@ import java.util.*;
 
 public class TrampolineMinigame extends PassiveMinigame {
 
-    private static final int DEBOUNCE_TICKS = 20;
+    private static final int DEBOUNCE_TICKS = 5;
 
-    private final IntegerListOption velocitiesOption;
+    private final DoubleListOption velocitiesOption;
     private final BlockRegionListOption blocksOption;
+    private final ActionsOption bounceActionsOption;
 
     private final Map<Player, Integer> playerDebounce = new HashMap<>();
     private List<Region> bounceRegions;
 
     public TrampolineMinigame() {
-        velocitiesOption = registerOption("velocities", new IntegerListOption());
+        velocitiesOption = registerOption("velocities", new DoubleListOption());
         blocksOption = registerOption("blocks", new BlockRegionListOption());
+        bounceActionsOption = registerOption("bounce_actions", new ActionsOption());
     }
 
     @Override
@@ -41,12 +39,15 @@ public class TrampolineMinigame extends PassiveMinigame {
 
     private void bounce(@NotNull Player player) {
         // check debounce and add to debounce
-        if (playerDebounce.containsKey(player)) return;
+        if (playerDebounce.containsKey(player) || player.isSneaking()) return;
         playerDebounce.put(player, DEBOUNCE_TICKS);
 
+        // run actions
+        bounceActionsOption.actions().run(player);
+
         // choose velocity
-        List<Integer> velocities = velocitiesOption.get();
-        int vel;
+        List<Double> velocities = velocitiesOption.get();
+        double vel;
 
         if (velocities.isEmpty()) {
             vel = 1;
@@ -72,9 +73,9 @@ public class TrampolineMinigame extends PassiveMinigame {
                         blockRegion.x1(),
                         blockRegion.y1() + 1,
                         blockRegion.z1(),
-                        blockRegion.x2(),
-                        blockRegion.y2() + 1,
-                        blockRegion.z2()
+                        blockRegion.x2() + 1,
+                        blockRegion.y2() + 2, // add extra one so that the region is at least 1 block tall
+                        blockRegion.z2() + 1
                 );
                 bounceRegions.add(region);
             }
