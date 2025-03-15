@@ -14,7 +14,7 @@ import java.util.*;
 
 public class TrampolineMinigame extends PassiveMinigame {
 
-    private static final int DEBOUNCE_TICKS = 5;
+    private static final int DEBOUNCE_TICKS = 10;
 
     private final DoubleListOption velocitiesOption;
     private final BlockRegionListOption blocksOption;

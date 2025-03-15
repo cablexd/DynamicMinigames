@@ -5,7 +5,6 @@ import me.cable.dm.MinigameManager;
 import me.cable.dm.option.*;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
@@ -25,8 +24,8 @@ public abstract class IntermissionMinigame extends Minigame implements Listener 
 
     protected final RegionOption waitingRegionOption;
     protected final LocationOption endPositionOption;
-    protected final ActionsOption onStartOption;
-    protected final ActionsOption onEndOption;
+    protected final ActionsOption startActionsOption;
+    protected final ActionsOption endActionsOption;
 
     private @NotNull GameState gameState = GameState.DISABLED;
     private int countdown;
@@ -40,8 +39,8 @@ public abstract class IntermissionMinigame extends Minigame implements Listener 
 
         waitingRegionOption = registerOption("waiting_region", new RegionOption());
         endPositionOption = registerOption("end_position", new LocationOption());
-        onStartOption = registerOption("on_start", new ActionsOption());
-        onEndOption = registerOption("on_end", new ActionsOption());
+        startActionsOption = registerOption("start_actions", new ActionsOption());
+        endActionsOption = registerOption("end_actions", new ActionsOption());
     }
 
     public static void initialize(@NotNull DynamicMinigames dynamicMinigames) {
@@ -95,7 +94,7 @@ public abstract class IntermissionMinigame extends Minigame implements Listener 
                     } else {
                         // countdown is up: start minigame
                         intermissionMinigame.gameState = GameState.RUNNING;
-                        intermissionMinigame.onStartOption.actions().run(waitingPlayers);
+                        intermissionMinigame.startActionsOption.actions().run(waitingPlayers);
                         Bukkit.getPluginManager().registerEvents(intermissionMinigame, dynamicMinigames);
                         intermissionMinigame.start(waitingPlayers);
                     }
@@ -143,7 +142,7 @@ public abstract class IntermissionMinigame extends Minigame implements Listener 
 
         // clean up
         cleanup();
-        onEndOption.actions().run(teleportOnEnd);
+        endActionsOption.actions().run(teleportOnEnd);
         gameState = GameState.WAITING;
     }
 

@@ -4,6 +4,7 @@ import me.cable.dm.minigame.IntermissionMinigame;
 import me.cable.dm.minigame.Minigame;
 import me.cable.dm.minigame.PassiveMinigame;
 import me.cable.dm.option.abs.AbstractOption;
+import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -43,7 +44,7 @@ public class MinigameSerializer {
             String path = "options." + getOptionKey(optionId);
 
             if (abstractOption.useConfigurationSection()) {
-                ConfigurationSection cs = config.createSection("options." + optionId);
+                ConfigurationSection cs = config.createSection(path);
                 boolean saved = abstractOption.save(cs);
 
                 if (!saved) {
@@ -83,7 +84,7 @@ public class MinigameSerializer {
         }
     }
 
-    private @Nullable Minigame loadFromFile(@NotNull String minigameType, @NotNull File file) {
+    private @Nullable Minigame loadFromFile(@NotNull String minigameType, @NotNull String minigameId, @NotNull File file) {
         if (!minigameManager.getRegisteredMinigames().containsKey(minigameType)) {
             return null;
         }
@@ -98,16 +99,28 @@ public class MinigameSerializer {
             String path = "options." + getOptionKey(optionId);
 
             if (abstractOption.useConfigurationSection()) {
-                ConfigurationSection cs = config.getConfigurationSection("options." + optionId);
+                ConfigurationSection cs = config.getConfigurationSection(path);
 
                 if (cs != null) {
-                    abstractOption.load(cs);
+                    try {
+                        abstractOption.load(cs);
+                    } catch (Exception e) {
+                        JavaPlugin.getProvidingPlugin(DynamicMinigames.class).getLogger().warning(
+                                "Error while loading option " + optionId + " for minigame " + minigameId + " of type " + minigameType);
+                        e.printStackTrace();
+                    }
                 }
             } else {
                 Object value = config.get(path);
 
                 if (value != null && !(value instanceof String s && s.equals(AbstractOption.USE_DEFAULT))) {
-                    abstractOption.load(value);
+                    try {
+                        abstractOption.load(value);
+                    } catch (Exception e) {
+                        JavaPlugin.getProvidingPlugin(DynamicMinigames.class).getLogger().warning(
+                                "Error while loading option " + optionId + " for minigame " + minigameId + " of type " + minigameType);
+                        e.printStackTrace();
+                    }
                 }
             }
         }
@@ -141,7 +154,7 @@ public class MinigameSerializer {
                     for (String minigameId : minigameIds) {
                         File minigameFile = new File(minigameTypeDirectory, minigameId);
                         minigameId = minigameId.substring(0, minigameId.length() - 4);
-                        Minigame minigame = loadFromFile(minigameType, minigameFile);
+                        Minigame minigame = loadFromFile(minigameType, minigameId, minigameFile);
 
                         if (minigame != null) {
                             if (minigame instanceof PassiveMinigame passiveMinigame) {
