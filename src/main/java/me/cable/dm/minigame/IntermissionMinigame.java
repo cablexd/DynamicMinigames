@@ -96,7 +96,7 @@ public abstract class IntermissionMinigame extends Minigame implements Listener 
                         intermissionMinigame.gameState = GameState.RUNNING;
                         intermissionMinigame.startActionsOption.actions().run(waitingPlayers);
                         Bukkit.getPluginManager().registerEvents(intermissionMinigame, dynamicMinigames);
-                        intermissionMinigame.start(waitingPlayers);
+                        intermissionMinigame.start(new ArrayList<>(waitingPlayers));
                     }
 
                     intermissionMinigame.countdown--;

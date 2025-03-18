@@ -75,8 +75,7 @@ public class RaceMinigame extends IntermissionMinigame {
 
     @Override
     public void start(@NotNull List<Player> players) {
-        this.players = new ArrayList<>(players);
-        resetValues();
+        this.players = players;
 
         // teleport players to start position
         for (Player player : players) {

@@ -124,7 +124,7 @@ public class FourCornersMinigame extends IntermissionMinigame {
 
     @Override
     public void start(@NotNull List<Player> players) {
-        alivePlayers = new ArrayList<>(players);
+        alivePlayers = players;
         World world = centerBlockOption.get().world();
 
         updatePlatformRegions();
