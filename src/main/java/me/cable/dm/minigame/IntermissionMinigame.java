@@ -57,7 +57,6 @@ public abstract class IntermissionMinigame extends Minigame implements Listener 
                 if (!(minigame instanceof IntermissionMinigame intermissionMinigame)) {
                     continue;
                 }
-                if (!(minigame instanceof SpleefMinigame)) continue;
 
                 GameState gameState = intermissionMinigame.getGameState();
 

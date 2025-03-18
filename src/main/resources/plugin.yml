@@ -8,8 +8,10 @@ depend:
 
 commands:
   dynamicminigames:
+    permission: "dynamicminigames.command.dynamicminigames"
     aliases:
       - "dm"
   minigame:
+    permission: "dynamicminigames.command.minigame"
     aliases:
       - "mg"

@@ -1,17 +1,18 @@
 package me.cable.dm.minigame.provided;
 
+import me.cable.actionsapi.Actions;
 import me.cable.dm.minigame.IntermissionMinigame;
-import me.cable.dm.option.ActionsOption;
-import me.cable.dm.option.BlockOption;
-import me.cable.dm.option.IntegerOption;
-import me.cable.dm.option.abs.Option;
-import me.cable.dm.util.BlockReference;
-import me.cable.dm.util.BlockRegion;
-import me.cable.dm.util.PlayerTextInput;
+import me.cable.dm.option.*;
+import me.cable.dm.option.abs.ListOption;
+import me.cable.dm.util.LocationReference;
 import org.bukkit.*;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
@@ -21,93 +22,40 @@ import java.util.*;
 
 public class FourCornersMinigame extends IntermissionMinigame {
 
-    private final IntegerOption platformSizeOption;
-    private final IntegerOption platformGapOption;
     private final IntegerOption startDelayOption;
-    private final IntegerOption destroyingCountdownOption;
-    private final IntegerOption destroyingDurationOption;
-    private final IntegerOption replacingDurationOption;
+    private final IntegerOption gameCountdownOption;
+    private final IntegerOption selectionDurationOption;
+    private final IntegerOption intermissionDurationOption;
     private final IntegerOption eliminationHeightOption;
 
-    private final BlockOption centerBlockOption;
+    private final StringListOption eliminationMaterialsOption;
+    private final PlatformsOption platformsOptions;
+    private final LocationListOption startPositionsOption;
 
-    private final PlatformOption[] platformOptions = new PlatformOption[4];
-
-    private final ActionsOption destroyingCountdownActionsOption;
-    private final ActionsOption destroyingActionsOption;
-    private final ActionsOption replacingActionsOption;
+    private final ActionsOption gameCountdownActionsOption;
+    private final ActionsOption selectionActionsOption;
+    private final ActionsOption intermissionActionsOption;
     private final ActionsOption eliminationActionsOption;
 
-    private final BlockRegion[] platformRegions = new BlockRegion[4];
     private List<Player> alivePlayers;
+    private int gameState;
+    private boolean eliminationMaterialsActive;
 
     public FourCornersMinigame() {
-        platformSizeOption = registerOption("platform_size", new IntegerOption());
-        platformGapOption = registerOption("platform_gap", new IntegerOption());
         startDelayOption = registerOption("start_delay", new IntegerOption());
-        destroyingCountdownOption = registerOption("destroying_countdown", new IntegerOption());
-        destroyingDurationOption = registerOption("destroying_duration", new IntegerOption());
-        replacingDurationOption = registerOption("replacing_duration", new IntegerOption());
+        gameCountdownOption = registerOption("game_countdown", new IntegerOption());
+        selectionDurationOption = registerOption("selection_duration", new IntegerOption());
+        intermissionDurationOption = registerOption("intermission_duration", new IntegerOption());
         eliminationHeightOption = registerOption("elimination_height", new IntegerOption());
 
-        centerBlockOption = registerOption("center_block", new BlockOption());
+        eliminationMaterialsOption = registerOption("elimination_materials", new StringListOption());
+        platformsOptions = registerOption("platforms", new PlatformsOption());
+        startPositionsOption = registerOption("start_positions", new LocationListOption());
 
-        platformOptions[0] = registerOption("platform1", new PlatformOption());
-        platformOptions[1] = registerOption("platform2", new PlatformOption());
-        platformOptions[2] = registerOption("platform3", new PlatformOption());
-        platformOptions[3] = registerOption("platform4", new PlatformOption());
-
-        destroyingCountdownActionsOption = registerOption("destroying_countdown_actions", new ActionsOption());
-        destroyingActionsOption = registerOption("destroying_actions", new ActionsOption());
-        replacingActionsOption = registerOption("replacing_actions", new ActionsOption());
+        gameCountdownActionsOption = registerOption("game_countdown_actions", new ActionsOption());
+        selectionActionsOption = registerOption("selection_actions", new ActionsOption());
+        intermissionActionsOption = registerOption("intermission_actions", new ActionsOption());
         eliminationActionsOption = registerOption("elimination_actions", new ActionsOption());
-    }
-
-    @Override
-    public boolean isEnabled() {
-        // check that world is loaded
-        return centerBlockOption.get().world() != null;
-    }
-
-    private @NotNull String getWorldName() {
-        return centerBlockOption.get().worldName();
-    }
-
-    private void updatePlatformRegions() {
-        BlockReference centerBlock = centerBlockOption.get();
-        String world = getWorldName();
-        int size = platformSizeOption.get();
-        int adding = platformGapOption.get() / 2 + 1;
-        int offset = (platformGapOption.get() & 1) == 0 ? 1 : 0; // for even values: shift platforms in certain way
-
-        platformRegions[0] = new BlockRegion(world,
-                centerBlock.x() + adding,
-                centerBlock.y(),
-                centerBlock.z() + adding,
-                centerBlock.x() + adding + size - 1,
-                centerBlock.y(),
-                centerBlock.z() + adding + size - 1);
-        platformRegions[1] = new BlockRegion(world,
-                centerBlock.x() - adding + offset,
-                centerBlock.y(),
-                centerBlock.z() + adding,
-                centerBlock.x() - adding + offset - size + 1,
-                centerBlock.y(),
-                centerBlock.z() + adding + size - 1);
-        platformRegions[2] = new BlockRegion(world,
-                centerBlock.x() - adding + offset,
-                centerBlock.y(),
-                centerBlock.z() - adding + offset,
-                centerBlock.x() - adding + offset - size + 1,
-                centerBlock.y(),
-                centerBlock.z() - adding + offset - size + 1);
-        platformRegions[3] = new BlockRegion(world,
-                centerBlock.x() + adding,
-                centerBlock.y(),
-                centerBlock.z() - adding + offset,
-                centerBlock.x() + adding + size - 1,
-                centerBlock.y(),
-                centerBlock.z() - adding + offset - size + 1);
     }
 
     private void checkPlayerCount() {
@@ -116,106 +64,122 @@ public class FourCornersMinigame extends IntermissionMinigame {
         }
     }
 
-    private void placePlatforms() {
-        for (int i = 0; i < 4; i++) {
-            platformRegions[i].fill(platformOptions[i].get().material);
-        }
-    }
-
     @Override
     public void start(@NotNull List<Player> players) {
         alivePlayers = players;
-        World world = centerBlockOption.get().world();
-
-        updatePlatformRegions();
-        placePlatforms();
 
         for (int i = 0; i < players.size(); i++) {
             Player player = players.get(i);
-            BlockRegion region = platformRegions[i % 4];
-
-            Location location = new Location(world,
-                    (region.x1() + region.x2() + 1) / 2.0,
-                    region.y1() + 1,
-                    (region.z1() + region.z2() + 1) / 2.0);
-            player.teleport(location);
+            LocationReference locationReference = startPositionsOption.get(i % 4);
+            player.teleport(locationReference.location());
         }
 
-        startPlayerDeathChecking();
+        startPlayerEliminationChecking();
         startGameLoop();
     }
 
-    private void startPlayerDeathChecking() {
-        int deathHeight = eliminationHeightOption.get();
+    private void eliminate(@NotNull Player player, boolean actions) {
+        if (actions) {
+            player.teleport(endPositionOption.get().location());
+            eliminationActionsOption.actions()
+                    .placeholder("player", player.getName())
+                    .run(player, alivePlayers);
+        }
+
+        alivePlayers.remove(player);
+        checkPlayerCount();
+    }
+
+    private boolean isOnEliminationMaterial(@NotNull Player player, @NotNull List<Material> eliminationMaterials) {
+        Block block = player.getLocation().getBlock().getRelative(BlockFace.DOWN);
+        return eliminationMaterials.contains(block.getType());
+    }
+
+    private void startPlayerEliminationChecking() {
+        List<Material> eliminationMaterials = new ArrayList<>();
+        int eliminationHeight = eliminationHeightOption.get();
+
+        for (String s : eliminationMaterialsOption.get()) {
+            Material material = Material.getMaterial(s);
+            if (material != null) eliminationMaterials.add(material);
+        }
 
         runTaskTimer(0, 1, () -> {
             for (Player player : List.copyOf(alivePlayers)) {
-                if (player.getLocation().getY() < deathHeight) {
-                    alivePlayers.remove(player);
-                    player.teleport(endPositionOption.get().location());
-                    eliminationActionsOption.actions()
-                            .placeholder("player", player.getName())
-                            .run(player, alivePlayers);
+                // if is under elimination height or is on an elimination material during selection state
+                if (player.getLocation().getY() < eliminationHeight || (eliminationMaterialsActive && isOnEliminationMaterial(player, eliminationMaterials))) {
+                    eliminate(player, true);
                 }
             }
-
-            checkPlayerCount();
         });
     }
 
     private void startGameLoop() {
         runTaskTimer(startDelayOption.get() * 20, 20, new BukkitRunnable() {
-            int state = 0;
             int countdown;
+            Platform selectedPlatform;
             boolean firstAction = true;
 
             @Override
             public void run() {
-                switch (state) {
+                switch (gameState) {
                     case 0 -> { // countdown
                         if (firstAction) {
                             firstAction = false;
-                            countdown = destroyingCountdownOption.get();
+                            countdown = gameCountdownOption.get();
                         }
 
-                        destroyingCountdownActionsOption.actions()
-                                .placeholder("seconds", countdown)
+                        gameCountdownActionsOption.actions()
                                 .placeholder("s", countdown == 1 ? "" : "s")
+                                .placeholder("seconds", countdown)
                                 .run(alivePlayers);
 
                         if (--countdown <= 0) {
-                            state = 1;
+                            gameState = 1;
                             firstAction = true;
                         }
                     }
-                    case 1 -> { // destroy platform
+                    case 1 -> { // elimination
                         if (firstAction) {
                             firstAction = false;
-                            countdown = destroyingDurationOption.get();
-
-                            int selectedPlataformI = (int) (Math.random() * 4);
-                            Platform platform = platformOptions[selectedPlataformI].get();
-                            platformRegions[selectedPlataformI].fill(Material.AIR);
-
-                            destroyingActionsOption.actions()
-                                    .placeholder("platform", platform.name)
-                                    .run(alivePlayers);
+                            countdown = selectionDurationOption.get();
+                            eliminationMaterialsActive = true;
+                            selectedPlatform = platformsOptions.get((int) (Math.random() * platformsOptions.size()));
                         }
+
+                        // run all-platform actions
+                        selectionActionsOption.actions()
+                                .placeholder("platform", selectedPlatform.name)
+                                .placeholder("s", countdown == 1 ? "" : "s")
+                                .placeholder("seconds", countdown)
+                                .run(alivePlayers);
+                        // run platform-specific actions
+                        new Actions(selectedPlatform.selectedActions)
+                                .placeholder("platform", selectedPlatform.name)
+                                .placeholder("s", countdown == 1 ? "" : "s")
+                                .placeholder("seconds", countdown)
+                                .run(alivePlayers);
+
                         if (--countdown <= 0) {
-                            state = 2;
+                            gameState = (intermissionDurationOption.get() == 0) ? 0 : 2;
                             firstAction = true;
+                            selectedPlatform = null;
                         }
                     }
-                    case 2 -> { // replace platforms
+                    case 2 -> {
                         if (firstAction) {
                             firstAction = false;
-                            countdown = replacingDurationOption.get();
-
-                            placePlatforms();
-                            replacingActionsOption.actions().run(alivePlayers);
+                            countdown = intermissionDurationOption.get();
+                            eliminationMaterialsActive = false;
                         }
+
+                        intermissionActionsOption.actions()
+                                .placeholder("s", countdown == 1 ? "" : "s")
+                                .placeholder("seconds", countdown)
+                                .run(alivePlayers);
+
                         if (--countdown <= 0) {
-                            state = 0;
+                            gameState = 0;
                             firstAction = true;
                         }
                     }
@@ -227,69 +191,38 @@ public class FourCornersMinigame extends IntermissionMinigame {
     @Override
     public void cleanup() {
         alivePlayers = null;
-
-        for (BlockRegion platformRegion : platformRegions) {
-            platformRegion.fill(Material.AIR);
-        }
+        gameState = 0;
+        eliminationMaterialsActive = false;
     }
 
     @EventHandler
     private void playerQuitEvent(@NotNull PlayerQuitEvent e) {
         Player player = e.getPlayer();
+        eliminate(player, false);
+    }
 
-        if (alivePlayers.remove(player)) {
-            checkPlayerCount();
+    @EventHandler
+    private void playerDeathEvent(@NotNull EntityDamageEvent e) {
+        if (!(e.getEntity() instanceof Player player) || !alivePlayers.contains(player)) return;
+
+        if (player.getHealth() - e.getFinalDamage() <= 0) {
+            e.setCancelled(true);
+            player.setHealth(player.getAttribute(Attribute.MAX_HEALTH).getBaseValue());
+            eliminate(player, true);
         }
     }
 
     private static class Platform {
         @NotNull String name;
-        @NotNull Material material;
+        @NotNull List<String> selectedActions;
 
-        public Platform(@NotNull String name, @NotNull Material material) {
+        public Platform(@NotNull String name, @NotNull List<String> selectedActions) {
             this.name = name;
-            this.material = material;
+            this.selectedActions = selectedActions;
         }
     }
 
-    private static class PlatformOption extends Option<Platform> {
-
-        @Override
-        public boolean canSetInGame() {
-            return true;
-        }
-
-        @Override
-        public @Nullable String setInGame(@NotNull Player player, @NotNull String[] args) {
-            if (args.length < 1 || !List.of("material", "name").contains(args[0])) {
-                return " <material|name>";
-            }
-
-            Platform platform;
-
-            if (getRaw() == null) {
-                platform = new Platform("New Platform", Material.BLUE_CONCRETE);
-                setRaw(platform);
-            } else {
-                platform = getRaw();
-            }
-
-            if (args[0].equals("material")) {
-                Material material = player.getInventory().getItemInMainHand().getType();
-                platform.material = material;
-                player.sendMessage(ChatColor.GREEN + "Set platform material to the material of the item currently being held: " + ChatColor.GOLD + material);
-            } else {
-                player.sendMessage(ChatColor.GREEN + "Type the new value in chat or type \"cancel\" to cancel:");
-
-                new PlayerTextInput(player, input -> {
-                    platform.name = input;
-                    player.sendMessage(ChatColor.GREEN + "Set name of platform to: " + ChatColor.GOLD + input);
-                    return true;
-                }, () -> player.sendMessage(ChatColor.GREEN + "Input cancelled.")).listen();
-            }
-
-            return null;
-        }
+    private static class PlatformsOption extends ListOption<Platform> {
 
         @Override
         public boolean useConfigurationSection() {
@@ -297,22 +230,17 @@ public class FourCornersMinigame extends IntermissionMinigame {
         }
 
         @Override
-        public boolean save(@NotNull ConfigurationSection configurationSection) {
-            Platform platform = getRaw();
-            if (platform == null) return false;
-
+        public void listSave(@NotNull Platform platform, @NotNull ConfigurationSection configurationSection) {
             configurationSection.set("name", platform.name);
-            configurationSection.set("material", platform.material.toString());
-            return true;
+            configurationSection.set("selected-actions", platform.selectedActions);
         }
 
         @Override
-        public void load(@NotNull ConfigurationSection configurationSection) {
-            setRaw(new Platform(
-                    Objects.requireNonNull(configurationSection.getString("name"), "Platform name is null"),
-                    Objects.requireNonNull(Material.getMaterial(Objects.requireNonNull(
-                            configurationSection.getString("material"), "Platform material is null")), "Invalid material")
-            ));
+        public @Nullable Platform listLoad(@NotNull ConfigurationSection configurationSection) {
+            return new Platform(
+                    configurationSection.getString("name", "Platform"),
+                    configurationSection.getStringList("selected-actions")
+            );
         }
     }
 }
