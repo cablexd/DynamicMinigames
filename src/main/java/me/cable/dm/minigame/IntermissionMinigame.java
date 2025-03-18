@@ -2,6 +2,7 @@ package me.cable.dm.minigame;
 
 import me.cable.dm.DynamicMinigames;
 import me.cable.dm.MinigameManager;
+import me.cable.dm.minigame.provided.SpleefMinigame;
 import me.cable.dm.option.*;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -56,6 +57,7 @@ public abstract class IntermissionMinigame extends Minigame implements Listener 
                 if (!(minigame instanceof IntermissionMinigame intermissionMinigame)) {
                     continue;
                 }
+                if (!(minigame instanceof SpleefMinigame)) continue;
 
                 GameState gameState = intermissionMinigame.getGameState();
 
@@ -63,6 +65,8 @@ public abstract class IntermissionMinigame extends Minigame implements Listener 
                 if (gameState == GameState.DISABLED) {
                     if (intermissionMinigame.isEnabled()) {
                         intermissionMinigame.gameState = GameState.WAITING;
+                    } else {
+                        continue;
                     }
                 } else if (!intermissionMinigame.isEnabled()) {
                     if (gameState == GameState.RUNNING) {
@@ -120,7 +124,7 @@ public abstract class IntermissionMinigame extends Minigame implements Listener 
     }
 
     public boolean isEnabled() {
-        return false;
+        return true;
     }
 
     public abstract void start(@NotNull List<Player> players);

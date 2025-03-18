@@ -21,46 +21,46 @@ import java.util.*;
 
 public class FourCornersMinigame extends IntermissionMinigame {
 
-    private final BlockOption centerBlockOption;
     private final IntegerOption platformSizeOption;
     private final IntegerOption platformGapOption;
-    private final IntegerOption fallHeight;
     private final IntegerOption startDelayOption;
-
-    private final PlatformOption[] platformOptions = new PlatformOption[4];
-
     private final IntegerOption destroyingCountdownOption;
     private final IntegerOption destroyingDurationOption;
     private final IntegerOption replacingDurationOption;
+    private final IntegerOption eliminationHeightOption;
+
+    private final BlockOption centerBlockOption;
+
+    private final PlatformOption[] platformOptions = new PlatformOption[4];
+
     private final ActionsOption destroyingCountdownActionsOption;
     private final ActionsOption destroyingActionsOption;
     private final ActionsOption replacingActionsOption;
-
     private final ActionsOption eliminationActionsOption;
 
     private final BlockRegion[] platformRegions = new BlockRegion[4];
     private List<Player> alivePlayers;
 
     public FourCornersMinigame() {
-        centerBlockOption = registerOption("center_block", new BlockOption());
         platformSizeOption = registerOption("platform_size", new IntegerOption());
         platformGapOption = registerOption("platform_gap", new IntegerOption());
-        fallHeight = registerOption("fall_height", new IntegerOption());
         startDelayOption = registerOption("start_delay", new IntegerOption());
+        destroyingCountdownOption = registerOption("destroying_countdown", new IntegerOption());
+        destroyingDurationOption = registerOption("destroying_duration", new IntegerOption());
+        replacingDurationOption = registerOption("replacing_duration", new IntegerOption());
+        eliminationHeightOption = registerOption("elimination_height", new IntegerOption());
+
+        centerBlockOption = registerOption("center_block", new BlockOption());
 
         platformOptions[0] = registerOption("platform1", new PlatformOption());
         platformOptions[1] = registerOption("platform2", new PlatformOption());
         platformOptions[2] = registerOption("platform3", new PlatformOption());
         platformOptions[3] = registerOption("platform4", new PlatformOption());
 
-        destroyingCountdownOption = registerOption("destroying_countdown", new IntegerOption());
-        destroyingDurationOption = registerOption("destroying_duration", new IntegerOption());
-        replacingDurationOption = registerOption("replacing_duration", new IntegerOption());
         destroyingCountdownActionsOption = registerOption("destroying_countdown_actions", new ActionsOption());
         destroyingActionsOption = registerOption("destroying_actions", new ActionsOption());
         replacingActionsOption = registerOption("replacing_actions", new ActionsOption());
-
-        eliminationActionsOption = registerOption("elimination_options", new ActionsOption());
+        eliminationActionsOption = registerOption("elimination_actions", new ActionsOption());
     }
 
     @Override
@@ -146,7 +146,7 @@ public class FourCornersMinigame extends IntermissionMinigame {
     }
 
     private void startPlayerDeathChecking() {
-        int deathHeight = centerBlockOption.get().y() + 1 - fallHeight.get();
+        int deathHeight = eliminationHeightOption.get();
 
         runTaskTimer(0, 1, () -> {
             for (Player player : List.copyOf(alivePlayers)) {
@@ -234,7 +234,7 @@ public class FourCornersMinigame extends IntermissionMinigame {
     }
 
     @EventHandler
-    private void onPlayerQuit(@NotNull PlayerQuitEvent e) {
+    private void playerQuitEvent(@NotNull PlayerQuitEvent e) {
         Player player = e.getPlayer();
 
         if (alivePlayers.remove(player)) {

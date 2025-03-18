@@ -6,6 +6,7 @@ import me.cable.dm.minigame.Minigame;
 import me.cable.dm.minigame.provided.FourCornersMinigame;
 import me.cable.dm.minigame.IntermissionMinigame;
 import me.cable.dm.minigame.provided.RaceMinigame;
+import me.cable.dm.minigame.provided.SpleefMinigame;
 import me.cable.dm.minigame.provided.TrampolineMinigame;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
@@ -49,6 +50,7 @@ public final class DynamicMinigames extends JavaPlugin {
     private void registerMinigames() {
         MinigameManager.registerMinigame("four_corners", FourCornersMinigame::new);
         MinigameManager.registerMinigame("race", RaceMinigame::new);
+        MinigameManager.registerMinigame("spleef", SpleefMinigame::new);
         MinigameManager.registerMinigame("trampoline", TrampolineMinigame::new);
     }
 

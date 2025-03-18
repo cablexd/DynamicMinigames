@@ -165,7 +165,7 @@ public class RaceMinigame extends IntermissionMinigame {
     }
 
     @EventHandler
-    private void onPlayerQuit(@NotNull PlayerQuitEvent e) {
+    private void playerQuitEvent(@NotNull PlayerQuitEvent e) {
         players.remove(e.getPlayer());
         checkPlayerCount();
     }
