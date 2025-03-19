@@ -1,5 +1,6 @@
 package me.cable.dm.minigame.provided;
 
+import me.cable.dm.leaderboard.Leaderboard;
 import me.cable.dm.minigame.PassiveMinigame;
 import me.cable.dm.option.*;
 import me.cable.dm.option.abs.AbstractOption;
@@ -9,6 +10,7 @@ import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
@@ -27,6 +29,10 @@ public class TrampolineMinigame extends PassiveMinigame {
         velocitiesOption = registerOption("velocities", new DoubleListOption());
         blocksOption = registerOption("blocks", new BlockRegionListOption());
         bounceActionsOption = registerOption("bounce_actions", new ActionsOption());
+
+        registerLeaderboard("bounces", () -> {
+            return new ArrayList<>();
+        });
     }
 
     @Override
