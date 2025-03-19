@@ -26,6 +26,12 @@ public final class MinigameManager {
         registeredMinigames.put(minigameTypeId, supplier);
     }
 
+    public void clearMinigames() {
+        Map<String, Map<String, Minigame>> map = Map.copyOf(minigames);
+        minigames.clear();
+        map.forEach((a, b) -> b.forEach((c, d) -> d.removeLeaderboards()));
+    }
+
     public boolean isValidMinigameType(@NotNull String minigameType) {
         return registeredMinigames.containsKey(minigameType);
     }
@@ -65,7 +71,7 @@ public final class MinigameManager {
         return registeredMinigames;
     }
 
-    public @Nullable Minigame createMinigame(@NotNull String minigameType, @NotNull String minigameId) {
+    public @NotNull Minigame createMinigame(@NotNull String minigameType, @NotNull String minigameId) {
         if (!isValidMinigameType(minigameType)) {
             throw new IllegalArgumentException("Invalid minigame type: " + minigameType);
         }

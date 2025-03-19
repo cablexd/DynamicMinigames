@@ -4,7 +4,6 @@ import me.cable.dm.minigame.IntermissionMinigame;
 import me.cable.dm.minigame.Minigame;
 import me.cable.dm.minigame.PassiveMinigame;
 import me.cable.dm.option.abs.AbstractOption;
-import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -55,6 +54,9 @@ public class MinigameSerializer {
                 config.set(path, serialized == null ? AbstractOption.USE_DEFAULT : serialized);
             }
         }
+
+        // save leaderboards
+        config.set("leaderboards", minigame.getLeaderboardsConfigurationSection());
 
         try {
             config.save(file);
@@ -125,12 +127,20 @@ public class MinigameSerializer {
             }
         }
 
+        ConfigurationSection leaderboardsSection = config.getConfigurationSection("leaderboards");
+
+        if (leaderboardsSection == null) {
+            leaderboardsSection = config.createSection("leaderboards");
+        }
+
+        minigame.initializeLeaderboards(leaderboardsSection);
+        minigame.updateLeaderboards();
         return minigame;
     }
 
     public void loadMinigames() {
         List<Minigame> minigames = minigameManager.getAllMinigames();
-        minigameManager.getMinigames().clear();
+        minigameManager.clearMinigames();
 
         for (Minigame minigame : minigames) {
             if (minigame instanceof IntermissionMinigame intermissionMinigame && intermissionMinigame.getGameState() == IntermissionMinigame.GameState.RUNNING) {

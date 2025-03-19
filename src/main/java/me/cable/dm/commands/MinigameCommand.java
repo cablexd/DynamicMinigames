@@ -8,6 +8,8 @@ import me.cable.dm.option.abs.AbstractOption;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -53,7 +55,9 @@ public class MinigameCommand extends AbstractCommand {
                     return true;
                 }
 
-                minigameManager.createMinigame(minigameType, minigameId);
+                Minigame minigame = minigameManager.createMinigame(minigameType, minigameId);
+                minigame.initializeLeaderboards(new YamlConfiguration());
+
                 commandSender.sendMessage(ChatColor.GREEN + "Successfully created minigame " + ChatColor.GOLD + minigameId + ChatColor.GREEN + " of type "
                         + ChatColor.GOLD + minigameType + ChatColor.GREEN + ".");
             }

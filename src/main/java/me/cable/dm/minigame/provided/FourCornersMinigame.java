@@ -70,7 +70,7 @@ public class FourCornersMinigame extends IntermissionMinigame {
 
         for (int i = 0; i < players.size(); i++) {
             Player player = players.get(i);
-            LocationReference locationReference = startPositionsOption.get(i % 4);
+            LocationReference locationReference = startPositionsOption.get(i % startPositionsOption.size());
             player.teleport(locationReference.location());
         }
 

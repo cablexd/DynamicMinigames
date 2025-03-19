@@ -6,29 +6,29 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.Location;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import me.cable.dm.util.Utils;
+import org.bukkit.Bukkit;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.Supplier;
 
 import org.bukkit.World;
 
-import org.bukkit.Bukkit;
-import me.cable.dm.util.Utils;
-
-public abstract class Leaderboard {
+public class Leaderboard {
 
     private final String id;
     private final ConfigurationSection configurationSection;
+    private final Supplier<List<Score>> scoreSupplier;
 
     private @Nullable Hologram hologram;
 
-    public Leaderboard(@NotNull ConfigurationSection configurationSection) {
+    public Leaderboard(@NotNull ConfigurationSection configurationSection, @NotNull Supplier<List<Score>> scoreSupplier) {
         id = UUID.randomUUID().toString();
         this.configurationSection = configurationSection;
+        this.scoreSupplier = scoreSupplier;
     }
-
-    public abstract @NotNull List<Score> getScores();
 
     private @Nullable Location getLocation() {
         String locString = configurationSection.getString("position");
@@ -46,11 +46,14 @@ public abstract class Leaderboard {
     }
 
     public final void update() {
-        if (!configurationSection.getBoolean("enabled")) {
+        Location location = getLocation();
+
+        if (!configurationSection.getBoolean("enabled") || location == null) {
+            remove();
             return;
         }
 
-        List<Score> scores = getScores();
+        List<Score> scores = scoreSupplier.get();
         List<String> holoLines = new ArrayList<>();
 
         String title = configurationSection.getString("title");
@@ -60,7 +63,7 @@ public abstract class Leaderboard {
         int scorePerPage = configurationSection.getInt("entries", 10);
         List<String> excludedPlayers = configurationSection.getStringList("exclude");
 
-        for (int i = 1; i <= Math.min(scores.size(), scorePerPage); i++) {
+        for (int i = 0; i < Math.min(scores.size(), scorePerPage); i++) {
             Score score = scores.get(i);
             UUID playerUuid = score.playerUuid();
 
@@ -71,7 +74,7 @@ public abstract class Leaderboard {
             String playerName = Bukkit.getOfflinePlayer(playerUuid).getName();
             String line = format
                     .replace("{player}", playerName == null ? "N/A" : playerName)
-                    .replace("{position}", Integer.toString(i))
+                    .replace("{position}", Integer.toString(i + 1))
                     .replace("{score}", score.value());
             holoLines.add(Utils.formatColor(line));
         }
@@ -87,11 +90,6 @@ public abstract class Leaderboard {
 
     public final void remove() {
         DHAPI.removeHologram(id);
-    }
-
-    public final void setLocation(@NotNull Location location) {
-        this.location = location;
-        update();
     }
 
     public record Score(@NotNull UUID playerUuid, @NotNull String value) {

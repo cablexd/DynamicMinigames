@@ -25,13 +25,21 @@ public class TrampolineMinigame extends PassiveMinigame {
     private final Map<Player, Integer> playerDebounce = new HashMap<>();
     private List<Region> bounceRegions;
 
+    private Map<Player, Integer> tempBounces = new HashMap<>();
+
     public TrampolineMinigame() {
         velocitiesOption = registerOption("velocities", new DoubleListOption());
         blocksOption = registerOption("blocks", new BlockRegionListOption());
         bounceActionsOption = registerOption("bounce_actions", new ActionsOption());
 
         registerLeaderboard("bounces", () -> {
-            return new ArrayList<>();
+            List<Leaderboard.Score> list = new ArrayList<>();
+
+            for (Map.Entry<Player, Integer> entry : tempBounces.entrySet().stream().sorted((a, b) -> b.getValue() - a.getValue()).toList()) {
+                list.add(new Leaderboard.Score(entry.getKey().getUniqueId(), entry.getValue() + "b"));
+            }
+
+            return list;
         });
     }
 
@@ -47,6 +55,8 @@ public class TrampolineMinigame extends PassiveMinigame {
         // check debounce and add to debounce
         if (playerDebounce.containsKey(player) || player.isSneaking()) return;
         playerDebounce.put(player, DEBOUNCE_TICKS);
+
+        tempBounces.put(player, tempBounces.getOrDefault(player, 0) + 1);
 
         // run actions
         bounceActionsOption.actions().run(player);

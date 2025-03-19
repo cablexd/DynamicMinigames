@@ -6,6 +6,7 @@ import org.bukkit.NamespacedKey;
 import me.cable.dm.MinigameManager;
 import me.cable.dm.option.abs.AbstractOption;
 import org.bukkit.Bukkit;
+import org.bukkit.Sound;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -14,20 +15,18 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Supplier;
-import java.util.function.Function;
 import java.util.*;
-
-import org.bukkit.Location;
 
 public abstract class Minigame {
 
     private static boolean initialized;
 
     private final Map<String, AbstractOption> options = new LinkedHashMap<>(); // LinkedHashMap for order
-    private final Map<String, Leaderboard> leaderboards = new LinkedHashMap<>();
+    private final Map<String, Supplier<List<Leaderboard.Score>>> registeredLeaderboards = new LinkedHashMap<>();
     private final List<BukkitTask> activeTasks = new ArrayList<>();
 
-    private @Nullable ConfigurationSection leaderboardsCs;
+    private @Nullable List<Leaderboard> leaderboards;
+    private @Nullable ConfigurationSection leaderboardsConfigurationSection;
 
     public static void initializeTimer(@NotNull DynamicMinigames dynamicMinigames) {
         if (initialized) {
@@ -37,6 +36,7 @@ public abstract class Minigame {
         MinigameManager minigameManager = dynamicMinigames.getMinigameManager();
         initialized = true;
 
+        // tick tasks
         Bukkit.getScheduler().scheduleSyncRepeatingTask(dynamicMinigames, () -> {
             for (Minigame minigame : minigameManager.getAllMinigames()) {
                 // remove all cancelled tasks
@@ -52,6 +52,38 @@ public abstract class Minigame {
                 }
             }
         }, 0, 1);
+
+        // leaderboard tasks
+        Bukkit.getScheduler().scheduleSyncRepeatingTask(dynamicMinigames, () -> {
+            for (Minigame minigame : minigameManager.getAllMinigames()) {
+                minigame.updateLeaderboards();
+            }
+        }, 0, 20 * 60);
+    }
+
+    public final void initializeLeaderboards(@NotNull ConfigurationSection leaderboardsCs) {
+        if (leaderboardsConfigurationSection != null) {
+            throw new IllegalStateException("Leaderboards already initialized");
+        }
+
+        leaderboardsConfigurationSection = leaderboardsCs;
+        leaderboards = new ArrayList<>();
+
+        for (Map.Entry<String, Supplier<List<Leaderboard.Score>>> entry : registeredLeaderboards.entrySet()) {
+            ConfigurationSection leaderboardCs = getLeaderboardCs(leaderboardsCs, entry.getKey());
+            Leaderboard leaderboard = new Leaderboard(leaderboardCs, entry.getValue());
+            leaderboards.add(leaderboard);
+        }
+
+        updateLeaderboards();
+    }
+
+    public final void updateLeaderboards() {
+        if (leaderboards != null) leaderboards.forEach(Leaderboard::update);
+    }
+
+    public final void removeLeaderboards() {
+        if (leaderboards != null) leaderboards.forEach(Leaderboard::remove);
     }
 
     public final <T extends AbstractOption> @NotNull T registerOption(@NotNull String id, @NotNull T option) {
@@ -63,52 +95,8 @@ public abstract class Minigame {
         return option;
     }
 
-    public final void registerLeaderboard(@NotNull String id, @NotNull Supplier<List<Score>> supplier, @NotNull Function<Integer, String> scoreFormatter) {
-        if (leaderboardsCs == null || !leaderboardsCs.getBoolean(id + ".enabled")) {
-            return;
-        }
-
-        Leaderboard leaderboard = new Leaderboard() {
-
-            @Override
-            public @Nullable String getTitle() {
-                return leaderboardsCs.getString(id + ".title");
-            }
-
-            @Override
-            public @NotNull List<Score> getScores() {
-                List<Score> list = new ArrayList<>();
-                List<Minigame.Score> scores = supplier.get();
-
-                for (int i = 0; i < scores.size(); i++) {
-                    String format = "&6{position}. {player} - {score}"; // TODO: get format from config
-                    Minigame.Score score = scores.get(i);
-                    String playerName = Bukkit.getOfflinePlayer(score.playerUuid).getName();
-
-                    String formatted = format
-                            .replace("{player}", playerName == null ? "N/A" : playerName)
-                            .replace("{position}", Integer.toString(i + 1))
-                            .replace("{score}", scoreFormatter.apply(score.value));
-                    list.add(new Score(score.playerUuid, formatted));
-                }
-
-                return list;
-            }
-        };
-
-        String locationStr = leaderboardsCs.getString(id + ".position");
-        if (locationStr == null) return;
-
-        String[] locParts = locationStr.split(",");
-        Location location = new Location(
-                Bukkit.getWorld(locParts[0]),
-                Double.parseDouble(locParts[1]),
-                Double.parseDouble(locParts[2]),
-                Double.parseDouble(locParts[3])
-        );
-
-        leaderboard.setLocation(location);
-        leaderboards.put(id, leaderboard);
+    public final void registerLeaderboard(@NotNull String id, @NotNull Supplier<List<Leaderboard.Score>> scoreSupplier) {
+        registeredLeaderboards.put(id, scoreSupplier);
     }
 
     protected final @NotNull NamespacedKey getNamespacedKey(@NotNull String key) {
@@ -144,5 +132,27 @@ public abstract class Minigame {
 
     public final @NotNull Map<String, AbstractOption> getOptions() {
         return new LinkedHashMap<>(options);
+    }
+
+    public @NotNull ConfigurationSection getLeaderboardsConfigurationSection() {
+        if (leaderboardsConfigurationSection == null) {
+            throw new IllegalStateException("Leaderboards not initialized");
+        }
+
+        return leaderboardsConfigurationSection;
+    }
+
+    private @NotNull ConfigurationSection getLeaderboardCs(@NotNull ConfigurationSection leaderboardsCs, @NotNull String id) {
+        ConfigurationSection leaderboardCs = leaderboardsCs.getConfigurationSection(id);
+
+        if (leaderboardCs == null) leaderboardCs = leaderboardsCs.createSection(id);
+        if (!leaderboardCs.contains("enabled")) leaderboardCs.set("enabled", false);
+        if (!leaderboardCs.contains("position")) leaderboardCs.set("position", "world,0.0,0.0,0.0");
+        if (!leaderboardCs.contains("title")) leaderboardCs.set("title", "&6&lLeaderboard Title");
+        if (!leaderboardCs.contains("format")) leaderboardCs.set("format", "&6{position}. {player} - {score}");
+        if (!leaderboardCs.contains("entries")) leaderboardCs.set("entries", 10);
+        if (!leaderboardCs.contains("exclude")) leaderboardCs.set("exclude", List.of("player_uuid"));
+
+        return leaderboardCs;
     }
 }
