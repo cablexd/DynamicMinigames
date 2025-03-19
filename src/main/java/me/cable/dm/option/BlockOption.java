@@ -2,16 +2,12 @@ package me.cable.dm.option;
 
 import me.cable.dm.option.abs.Option;
 import me.cable.dm.util.BlockReference;
-import me.cable.dm.util.BlockRegion;
 import org.bukkit.ChatColor;
-import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.Collections;
 
 public class BlockOption extends Option<BlockReference> {
 

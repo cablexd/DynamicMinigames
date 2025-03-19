@@ -34,6 +34,11 @@ public class BlockRegion {
                 && z >= z1 && z < z2 + 1;
     }
 
+    public boolean contains(@NotNull Block block) {
+        World world = block.getWorld();
+        return contains(world.getName(), block.getX(), block.getY(), block.getZ());
+    }
+
     public boolean contains(@NotNull Location location) {
         World world = location.getWorld();
         return contains(world == null ? null : world.getName(), location.getX(), location.getY(), location.getZ());

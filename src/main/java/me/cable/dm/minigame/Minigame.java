@@ -1,6 +1,7 @@
 package me.cable.dm.minigame;
 
 import me.cable.dm.DynamicMinigames;
+import org.bukkit.NamespacedKey;
 import me.cable.dm.MinigameManager;
 import me.cable.dm.option.abs.AbstractOption;
 import org.bukkit.Bukkit;
@@ -50,6 +51,10 @@ public abstract class Minigame {
 
         options.put(id, option);
         return option;
+    }
+
+    protected final @NotNull NamespacedKey getNamespacedKey(@NotNull String key) {
+        return new NamespacedKey(JavaPlugin.getProvidingPlugin(DynamicMinigames.class), key);
     }
 
     protected final @NotNull BukkitTask runTaskTimer(long delay, long period, @NotNull BukkitRunnable bukkitRunnable) {

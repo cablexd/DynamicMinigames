@@ -4,6 +4,7 @@ import me.cable.dm.minigame.IntermissionMinigame;
 import me.cable.dm.option.*;
 import me.cable.dm.option.abs.Option;
 import me.cable.dm.util.BlockRegion;
+import me.cable.dm.util.ItemUtils;
 import me.cable.dm.util.LocationReference;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -13,8 +14,16 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.block.Block;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.NamespacedKey;
+import org.bukkit.event.entity.ProjectileLaunchEvent;
+import org.bukkit.event.entity.ProjectileHitEvent;
+import org.bukkit.entity.Projectile;
+import org.bukkit.projectiles.ProjectileSource;
 
 import java.util.HashMap;
 import java.util.List;
@@ -28,6 +37,8 @@ public class SpleefMinigame extends IntermissionMinigame {
     private final LocationListOption startPositionsOption;
     private final StringOption worldOption;
     private final SpleefBlocksOption blocksOption;
+    private final IntegerOption itemSlotOption;
+    private final ConfigurationSectionOption itemOption;
 
     private final ActionsOption gameCountdownActionsOption;
     private final ActionsOption gameStartActionsOption;
@@ -45,6 +56,8 @@ public class SpleefMinigame extends IntermissionMinigame {
         startPositionsOption = registerOption("start_positions", new LocationListOption());
         worldOption = registerOption("world", new StringOption());
         blocksOption = registerOption("blocks", new SpleefBlocksOption());
+        itemSlotOption = registerOption("item_slot", new IntegerOption());
+        itemOption = registerOption("item", new ConfigurationSectionOption());
 
         gameCountdownActionsOption = registerOption("game_countdown_actions", new ActionsOption());
         gameStartActionsOption = registerOption("game_start_actions", new ActionsOption());
@@ -93,9 +106,23 @@ public class SpleefMinigame extends IntermissionMinigame {
         }
     }
 
+    private @NotNull NamespacedKey getItemKey() {
+        return getNamespacedKey("spleef-throw-item");
+    }
+
     private void startGame() {
         started = true;
         gameStartActionsOption.actions().run(alivePlayers);
+
+        // give items
+        if (itemSlotOption.get() != -1) {
+            ItemStack item = ItemUtils.item(itemOption.get());
+            ItemUtils.setKey(item, getItemKey());
+
+            for (Player player : players) {
+                player.getInventory().setItem(itemSlotOption.get(), item);
+            }
+        }
     }
 
     @Override
@@ -182,6 +209,44 @@ public class SpleefMinigame extends IntermissionMinigame {
     private void playerQuitEvent(@NotNull PlayerQuitEvent e) {
         alivePlayers.remove(e.getPlayer());
         checkPlayerCount();
+    }
+
+    @EventHandler
+    private void projectileLaunchEvent(@NotNull ProjectileLaunchEvent e) {
+        Projectile projectile = e.getEntity();
+        ProjectileSource projectileSource = projectile.getShooter();
+
+        if (!(projectileSource instanceof Player player) || !alivePlayers.contains(projectileSource)) {
+            return;
+        }
+
+        ItemStack item = player.getItemInUse();
+
+        if (item != null && ItemUtils.hasKey(item, getItemKey())) {
+            projectile.getPersistentDataContainer().set(getItemKey(), PersistentDataType.BOOLEAN, true);
+        }
+    }
+
+    @EventHandler
+    private void projectileHitEvent(@NotNull ProjectileHitEvent e) {
+        Projectile projectile = e.getEntity();
+        if (!projectile.getPersistentDataContainer().has(getItemKey())) return;
+
+        Block block = e.getHitBlock();
+        if (block == null) return;
+
+        boolean canBreak = false;
+
+        for (BlockRegion blockRegion : getBlockRegions().keySet()) {
+            if (blockRegion.contains(block)) {
+                canBreak = true;
+                break;
+            }
+        }
+
+        if (canBreak) {
+            block.setType(Material.AIR);
+        }
     }
 
     private static class SpleefBlocksOption extends Option<Map<String, Material>> {
