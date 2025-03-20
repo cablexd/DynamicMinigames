@@ -10,7 +10,6 @@ import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
@@ -25,22 +24,12 @@ public class TrampolineMinigame extends PassiveMinigame {
     private final Map<Player, Integer> playerDebounce = new HashMap<>();
     private List<Region> bounceRegions;
 
-    private Map<Player, Integer> tempBounces = new HashMap<>();
-
     public TrampolineMinigame() {
         velocitiesOption = registerOption("velocities", new DoubleListOption());
         blocksOption = registerOption("blocks", new BlockRegionListOption());
         bounceActionsOption = registerOption("bounce_actions", new ActionsOption());
 
-        registerLeaderboard("bounces", () -> {
-            List<Leaderboard.Score> list = new ArrayList<>();
-
-            for (Map.Entry<Player, Integer> entry : tempBounces.entrySet().stream().sorted((a, b) -> b.getValue() - a.getValue()).toList()) {
-                list.add(new Leaderboard.Score(entry.getKey().getUniqueId(), Integer.toString(entry.getValue())));
-            }
-
-            return list;
-        });
+        registerLeaderboard("bounces", v -> Integer.toString(v), (a, b) -> b - a);
     }
 
     @Override
@@ -51,12 +40,18 @@ public class TrampolineMinigame extends PassiveMinigame {
         }
     }
 
+    private void increaseBounceScore(@NotNull Player player) {
+        setLeaderboardScore("bounces", player.getUniqueId(),
+                Objects.requireNonNullElse(getLeaderboardScore("bounces", player.getUniqueId()), 0) + 1);
+    }
+
     private void bounce(@NotNull Player player) {
         // check debounce and add to debounce
         if (playerDebounce.containsKey(player) || player.isSneaking()) return;
         playerDebounce.put(player, DEBOUNCE_TICKS);
 
-        tempBounces.put(player, tempBounces.getOrDefault(player, 0) + 1);
+        // increase bounce leaderboard score
+        increaseBounceScore(player);
 
         // run actions
         bounceActionsOption.actions().run(player);

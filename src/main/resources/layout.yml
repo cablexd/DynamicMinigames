@@ -4,3 +4,12 @@ minigames:
         optionId: "option value"
         optionId2: "option value"
       otherMinigameProperty: "some value"
+leaderboards:
+  bounces:
+    enabled: false
+    position: "world,19.5,-57.0,-57.5"
+    title: "&6&lMost Bounces"
+    format: "&e{position}. &a{player} &7- &6{score}"
+    entries: 10
+    exclude:
+      - "player_uuid"

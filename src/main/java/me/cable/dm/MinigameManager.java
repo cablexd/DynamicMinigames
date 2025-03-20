@@ -70,6 +70,7 @@ public final class MinigameManager {
 
     public @NotNull Minigame createMinigame(@NotNull String minigameType, @NotNull String minigameId, boolean add) {
         Minigame minigame = registeredMinigames.get(minigameType).get();
+        minigame.initialize(minigameType, minigameId);
 
         if (add) {
             addMinigame(minigameType, minigameId, minigame);

@@ -2,25 +2,28 @@ package me.cable.dm.leaderboard;
 
 import eu.decentsoftware.holograms.api.DHAPI;
 import eu.decentsoftware.holograms.api.holograms.Hologram;
+import me.cable.dm.DynamicMinigames;
+import me.cable.dm.minigame.Minigame;
 import me.cable.dm.option.abs.Option;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.Location;
+import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import me.cable.dm.util.Utils;
 import org.bukkit.Bukkit;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-import java.util.function.Supplier;
+import java.util.*;
+import java.util.function.Function;
 
 import org.bukkit.World;
 
 public class Leaderboard {
 
+    private final Minigame minigame;
+    private final Function<Integer, String> scoreFormatter;
+    private final Comparator<Integer> scoreSorter;
     private final String holoId;
-    private final Supplier<List<Score>> scoreSupplier;
 
     private boolean enabled = false;
     private @NotNull String position = "world,0.0,0.0,0.0";
@@ -31,9 +34,32 @@ public class Leaderboard {
 
     private @Nullable Hologram hologram;
 
-    public Leaderboard(@NotNull Supplier<List<Score>> scoreSupplier) {
+    public Leaderboard(@NotNull Minigame minigame, @NotNull Function<Integer, String> scoreFormatter, Comparator<Integer> scoreSorter) {
+        this.minigame = minigame;
+        this.scoreFormatter = scoreFormatter;
+        this.scoreSorter = scoreSorter;
         holoId = UUID.randomUUID().toString();
-        this.scoreSupplier = scoreSupplier;
+    }
+
+    private @NotNull String getId() {
+        for (Map.Entry<String, Leaderboard> entry : minigame.getLeaderboards().entrySet()) {
+            if (entry.getValue() == this) {
+                return entry.getKey();
+            }
+        }
+
+        throw new IllegalStateException("Minigame does not contain leaderboard");
+    }
+
+    private @NotNull List<Score> getScores() {
+        List<Score> list = new ArrayList<>();
+
+        for (Map.Entry<UUID, Integer> entry : JavaPlugin.getPlugin(DynamicMinigames.class).getLeaderboardData().getValues(minigame.getTypeId(), minigame.getId(), getId()).entrySet()) {
+            list.add(new Score(entry.getKey(), entry.getValue()));
+        }
+
+        list.sort(Comparator.comparing(v -> v.value, scoreSorter));
+        return list;
     }
 
     private @Nullable Location getLocation() {
@@ -68,7 +94,7 @@ public class Leaderboard {
             return;
         }
 
-        List<Score> scores = scoreSupplier.get();
+        List<Score> scores = getScores();
         List<String> holoLines = new ArrayList<>();
 
         if (title != null) holoLines.add(title);
@@ -85,7 +111,7 @@ public class Leaderboard {
             String line = getFormat()
                     .replace("{player}", playerName == null ? "N/A" : playerName)
                     .replace("{position}", Integer.toString(i + 1))
-                    .replace("{score}", score.value());
+                    .replace("{score}", scoreFormatter.apply(score.value()));
             holoLines.add(Utils.formatColor(line));
         }
 
@@ -170,7 +196,7 @@ public class Leaderboard {
         update();
     }
 
-    public record Score(@NotNull UUID playerUuid, @NotNull String value) {
+    private record Score(@NotNull UUID playerUuid, int value) {
 
     }
 }

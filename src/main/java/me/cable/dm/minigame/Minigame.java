@@ -10,8 +10,9 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import java.util.function.Supplier;
+import java.util.function.Function;
 import java.util.*;
 
 public abstract class Minigame {
@@ -21,6 +22,9 @@ public abstract class Minigame {
     private final Map<String, AbstractOption> options = new LinkedHashMap<>(); // LinkedHashMap for order
     private final Map<String, Leaderboard> leaderboards = new HashMap<>();
     private final List<BukkitTask> activeTasks = new ArrayList<>();
+
+    private @Nullable String typeId;
+    private @Nullable String id;
 
     public static void initializeTimer(@NotNull DynamicMinigames dynamicMinigames) {
         if (initialized) {
@@ -55,12 +59,29 @@ public abstract class Minigame {
         }, 0, 20 * 60);
     }
 
+    public void initialize(@NotNull String typeId, @NotNull String id) {
+        if (this.typeId != null) {
+            throw new IllegalStateException("Minigame already initialized");
+        }
+
+        this.typeId = typeId;
+        this.id = id;
+    }
+
     public final void updateLeaderboards() {
         leaderboards.values().forEach(Leaderboard::update);
     }
 
     public final void removeLeaderboards() {
         leaderboards.values().forEach(Leaderboard::remove);
+    }
+
+    public @Nullable Integer getLeaderboardScore(@NotNull String leaderboardId, @NotNull UUID playerUuid) {
+        return JavaPlugin.getPlugin(DynamicMinigames.class).getLeaderboardData().getValue(getTypeId(), getId(), leaderboardId, playerUuid);
+    }
+
+    public void setLeaderboardScore(@NotNull String leaderboardId, @NotNull UUID playerUuid, @Nullable Integer score) {
+        JavaPlugin.getPlugin(DynamicMinigames.class).getLeaderboardData().setValue(getTypeId(), getId(), leaderboardId, playerUuid, score);
     }
 
     public final <T extends AbstractOption> @NotNull T registerOption(@NotNull String id, @NotNull T option) {
@@ -72,8 +93,8 @@ public abstract class Minigame {
         return option;
     }
 
-    public final void registerLeaderboard(@NotNull String id, @NotNull Supplier<List<Leaderboard.Score>> scoreSupplier) {
-        leaderboards.put(id, new Leaderboard(scoreSupplier));
+    public final void registerLeaderboard(@NotNull String id, @NotNull Function<Integer, String> scoreFormatter, @NotNull Comparator<Integer> scoreSorter) {
+        leaderboards.put(id, new Leaderboard(this, scoreFormatter, scoreSorter));
     }
 
     protected final @NotNull NamespacedKey getNamespacedKey(@NotNull String key) {
@@ -113,5 +134,13 @@ public abstract class Minigame {
 
     public @NotNull Map<String, Leaderboard> getLeaderboards() {
         return new LinkedHashMap<>(leaderboards);
+    }
+
+    public @NotNull String getTypeId() {
+        return Objects.requireNonNull(typeId, "Minigame not initialized");
+    }
+
+    public @NotNull String getId() {
+        return Objects.requireNonNull(id, "Minigame not initialized");
     }
 }

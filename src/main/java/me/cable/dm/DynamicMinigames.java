@@ -2,6 +2,7 @@ package me.cable.dm;
 
 import me.cable.dm.commands.MainCommand;
 import me.cable.dm.commands.MinigameCommand;
+import me.cable.dm.leaderboard.LeaderboardData;
 import me.cable.dm.minigame.Minigame;
 import me.cable.dm.minigame.provided.FourCornersMinigame;
 import me.cable.dm.minigame.IntermissionMinigame;
@@ -15,6 +16,7 @@ public final class DynamicMinigames extends JavaPlugin {
 
     private MinigameManager minigameManager;
     private MinigameSerializer minigameSerializer;
+    private LeaderboardData leaderboardData;
 
     /*
         TODO:
@@ -40,6 +42,7 @@ public final class DynamicMinigames extends JavaPlugin {
     private void initializeHandlers() {
         minigameManager = new MinigameManager();
         minigameSerializer = new MinigameSerializer(this);
+        leaderboardData = new LeaderboardData(this);
     }
 
     private void registerCommands() {
@@ -60,5 +63,9 @@ public final class DynamicMinigames extends JavaPlugin {
 
     public @NotNull MinigameSerializer getMinigameSerializer() {
         return minigameSerializer;
+    }
+
+    public @NotNull LeaderboardData getLeaderboardData() {
+        return leaderboardData;
     }
 }
