@@ -2,14 +2,10 @@ package me.cable.dm.commands;
 
 import me.cable.dm.MinigameManager;
 import me.cable.dm.minigame.Minigame;
-import me.cable.dm.option.IntegerOption;
-import me.cable.dm.option.StringOption;
 import me.cable.dm.option.abs.AbstractOption;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
-import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -55,29 +51,23 @@ public class MinigameCommand extends AbstractCommand {
                     return true;
                 }
 
-                Minigame minigame = minigameManager.createMinigame(minigameType, minigameId);
-                minigame.initializeLeaderboards(new YamlConfiguration());
-
+                minigameManager.createMinigame(minigameType, minigameId, true);
                 commandSender.sendMessage(ChatColor.GREEN + "Successfully created minigame " + ChatColor.GOLD + minigameId + ChatColor.GREEN + " of type "
                         + ChatColor.GOLD + minigameType + ChatColor.GREEN + ".");
             }
             case "list" -> {
-                Map<String, List<String>> minigames = minigameManager.getCreatedMinigames();
+                Map<String, Map<String, Minigame>> minigames = minigameManager.getMinigames();
 
                 if (minigames.isEmpty()) {
                     commandSender.sendMessage(ChatColor.GREEN + "No minigames have been created.");
                 } else {
-                    StringBuilder sb = new StringBuilder();
+                    StringBuilder sb = new StringBuilder("Minigames:");
 
-                    for (Map.Entry<String, List<String>> entry : minigames.entrySet()) {
-                        if (!sb.isEmpty()) {
-                            sb.append('\n');
-                        }
+                    for (Map.Entry<String, Map<String, Minigame>> entry : minigames.entrySet()) {
+                        sb.append("\n\t").append(entry.getKey());
 
-                        sb.append(entry.getKey());
-
-                        for (String s : entry.getValue()) {
-                            sb.append('\n').append("  > ").append(s);
+                        for (String s : entry.getValue().keySet()) {
+                            sb.append("\n\t\t> ").append(s);
                         }
                     }
 
@@ -128,43 +118,6 @@ public class MinigameCommand extends AbstractCommand {
 
                 if (appendToUsage != null) {
                     commandSender.sendMessage(usage + appendToUsage);
-                }
-
-                if (false) switch (abstractOption) {
-                    case null ->
-                            commandSender.sendMessage(ChatColor.RED + "The option " + ChatColor.GOLD + optionId + ChatColor.RED + " does not exist!");
-                    case StringOption stringOption -> {
-                        if (args.length < 5) {
-                            commandSender.sendMessage(ChatColor.RED + "Usage: /" + label + " option <minigame type> <minigame id> <option> <value>");
-                            return true;
-                        }
-
-                        String value = args[4];
-                        stringOption.set(value);
-                        commandSender.sendMessage(ChatColor.GREEN + "The option " + ChatColor.GOLD + optionId + ChatColor.GREEN + " has been set to "
-                                + ChatColor.GOLD + value + ChatColor.GREEN + ".");
-                    }
-                    case IntegerOption integerOption -> {
-                        if (args.length < 5) {
-                            commandSender.sendMessage(ChatColor.RED + "Usage: /" + label + " option <minigame type> <minigame id> <option> <integer value>");
-                            return true;
-                        }
-
-                        int value;
-
-                        try {
-                            value = Integer.parseInt(args[4]);
-                        } catch (NumberFormatException ex) {
-                            commandSender.sendMessage(ChatColor.RED + "Usage: /" + label + " option <minigame type> <minigame id> <option> <integer value>");
-                            return true;
-                        }
-
-                        integerOption.set(value);
-                        commandSender.sendMessage(ChatColor.GREEN + "The option " + ChatColor.GOLD + optionId + ChatColor.GREEN + " has been set to "
-                                + ChatColor.GOLD + value + ChatColor.GREEN + ".");
-                    }
-                    default ->
-                            commandSender.sendMessage(ChatColor.RED + "That option's value cannot be set through this command!");
                 }
             }
             case "remove" -> {

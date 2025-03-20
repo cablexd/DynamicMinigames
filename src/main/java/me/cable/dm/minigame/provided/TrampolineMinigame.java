@@ -36,7 +36,7 @@ public class TrampolineMinigame extends PassiveMinigame {
             List<Leaderboard.Score> list = new ArrayList<>();
 
             for (Map.Entry<Player, Integer> entry : tempBounces.entrySet().stream().sorted((a, b) -> b.getValue() - a.getValue()).toList()) {
-                list.add(new Leaderboard.Score(entry.getKey().getUniqueId(), entry.getValue() + "b"));
+                list.add(new Leaderboard.Score(entry.getKey().getUniqueId(), Integer.toString(entry.getValue())));
             }
 
             return list;

@@ -2,7 +2,6 @@ package me.cable.dm.minigame;
 
 import me.cable.dm.DynamicMinigames;
 import me.cable.dm.MinigameManager;
-import me.cable.dm.minigame.provided.SpleefMinigame;
 import me.cable.dm.option.*;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -53,7 +52,7 @@ public abstract class IntermissionMinigame extends Minigame implements Listener 
         initialized = true;
 
         Bukkit.getScheduler().scheduleSyncRepeatingTask(dynamicMinigames, () -> {
-            for (Minigame minigame : minigameManager.getAllMinigames()) {
+            for (Minigame minigame : minigameManager.getMinigamesList()) {
                 if (!(minigame instanceof IntermissionMinigame intermissionMinigame)) {
                     continue;
                 }

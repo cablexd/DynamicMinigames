@@ -1,5 +1,6 @@
 package me.cable.dm;
 
+import me.cable.dm.leaderboard.Leaderboard;
 import me.cable.dm.minigame.IntermissionMinigame;
 import me.cable.dm.minigame.Minigame;
 import me.cable.dm.minigame.PassiveMinigame;
@@ -9,11 +10,9 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -56,7 +55,13 @@ public class MinigameSerializer {
         }
 
         // save leaderboards
-        config.set("leaderboards", minigame.getLeaderboardsConfigurationSection());
+
+        for (Map.Entry<String, Leaderboard> entry : minigame.getLeaderboards().entrySet()) {
+            ConfigurationSection cs = config.createSection("leaderboards." + entry.getKey());
+            entry.getValue().saveSettings(cs);
+        }
+
+        // save config
 
         try {
             config.save(file);
@@ -86,12 +91,8 @@ public class MinigameSerializer {
         }
     }
 
-    private @Nullable Minigame loadFromFile(@NotNull String minigameType, @NotNull String minigameId, @NotNull File file) {
-        if (!minigameManager.getRegisteredMinigames().containsKey(minigameType)) {
-            return null;
-        }
-
-        Minigame minigame = minigameManager.getRegisteredMinigames().get(minigameType).get();
+    private @NotNull Minigame loadFromFile(@NotNull String minigameType, @NotNull String minigameId, @NotNull File file) {
+        Minigame minigame = minigameManager.createMinigame(minigameType, minigameId, false);
         FileConfiguration config = YamlConfiguration.loadConfiguration(file);
 
         // load options
@@ -127,19 +128,17 @@ public class MinigameSerializer {
             }
         }
 
-        ConfigurationSection leaderboardsSection = config.getConfigurationSection("leaderboards");
-
-        if (leaderboardsSection == null) {
-            leaderboardsSection = config.createSection("leaderboards");
+        // load leaderboard settings
+        for (Map.Entry<String, Leaderboard> entry : minigame.getLeaderboards().entrySet()) {
+            ConfigurationSection leaderboardSection = config.getConfigurationSection("leaderboards." + entry.getKey());
+            entry.getValue().loadSettings(leaderboardSection == null ? new YamlConfiguration() : leaderboardSection);
         }
 
-        minigame.initializeLeaderboards(leaderboardsSection);
-        minigame.updateLeaderboards();
         return minigame;
     }
 
     public void loadMinigames() {
-        List<Minigame> minigames = minigameManager.getAllMinigames();
+        List<Minigame> minigames = minigameManager.getMinigamesList();
         minigameManager.clearMinigames();
 
         for (Minigame minigame : minigames) {
@@ -154,27 +153,28 @@ public class MinigameSerializer {
         File minigamesDirectory = getMinigamesDirectory();
         String[] minigameTypes = minigamesDirectory.list();
 
-        if (minigameTypes != null) {
-            for (String minigameType : minigameTypes) {
-                File minigameTypeDirectory = new File(minigamesDirectory, minigameType);
+        if (minigameTypes == null) {
+            return;
+        }
 
-                String[] minigameIds = minigameTypeDirectory.list();
+        for (String minigameType : minigameTypes) {
+            if (!minigameManager.isValidMinigameType(minigameType)) {
+                continue;
+            }
 
-                if (minigameIds != null) {
-                    for (String minigameId : minigameIds) {
-                        File minigameFile = new File(minigameTypeDirectory, minigameId);
-                        minigameId = minigameId.substring(0, minigameId.length() - 4);
-                        Minigame minigame = loadFromFile(minigameType, minigameId, minigameFile);
+            File minigameTypeDirectory = new File(minigamesDirectory, minigameType);
+            String[] minigameIds = minigameTypeDirectory.list();
 
-                        if (minigame != null) {
-                            if (minigame instanceof PassiveMinigame passiveMinigame) {
-                                passiveMinigame.start();
-                            }
+            if (minigameIds == null) {
+                continue;
+            }
 
-                            minigameManager.getMinigames().computeIfAbsent(minigameType, v -> new HashMap<>()).put(minigameId, minigame);
-                        }
-                    }
-                }
+            for (String minigameId : minigameIds) {
+                File minigameFile = new File(minigameTypeDirectory, minigameId);
+                minigameId = minigameId.substring(0, minigameId.length() - 4);
+
+                Minigame minigame = loadFromFile(minigameType, minigameId, minigameFile);
+                minigameManager.addMinigame(minigameType, minigameId, minigame);
             }
         }
     }

@@ -26,52 +26,34 @@ public final class MinigameManager {
         registeredMinigames.put(minigameTypeId, supplier);
     }
 
-    public void clearMinigames() {
-        Map<String, Map<String, Minigame>> map = Map.copyOf(minigames);
-        minigames.clear();
-        map.forEach((a, b) -> b.forEach((c, d) -> d.removeLeaderboards()));
-    }
-
     public boolean isValidMinigameType(@NotNull String minigameType) {
         return registeredMinigames.containsKey(minigameType);
     }
 
     public boolean isMinigameIdAvailable(@NotNull String minigameType, @NotNull String minigameId) {
-        return isValidMinigameType(minigameType) && !minigames.computeIfAbsent(minigameType, v -> new HashMap<>()).containsKey(minigameId);
-    }
-
-    public @NotNull Map<String, Map<String, Minigame>> getMinigames() {
-        return minigames;
-    }
-
-    public @NotNull List<Minigame> getAllMinigames() {
-        List<Minigame> list = new ArrayList<>();
-        minigames.forEach((a, b) -> list.addAll(b.values()));
-        return list;
-    }
-
-    public @NotNull Map<String, List<String>> getCreatedMinigames() {
-        Map<String, List<String>> map = new HashMap<>();
-
-        for (Map.Entry<String, Map<String, Minigame>> entry : minigames.entrySet()) {
-            if (!entry.getValue().isEmpty()) {
-                map.put(entry.getKey(), new ArrayList<>(entry.getValue().keySet()));
-            }
-        }
-
-        return map;
-    }
-
-    public @Nullable Minigame getMinigame(@NotNull String minigameType, @NotNull String minigameId) {
-        Map<String, Minigame> typedMinigames = minigames.get(minigameType);
-        return typedMinigames == null ? null : typedMinigames.get(minigameId);
+        return isValidMinigameType(minigameType)
+                && (!minigames.containsKey(minigameType) || !minigames.get(minigameType).containsKey(minigameId));
     }
 
     public @NotNull Map<String, Supplier<? extends Minigame>> getRegisteredMinigames() {
-        return registeredMinigames;
+        return Map.copyOf(registeredMinigames);
     }
 
-    public @NotNull Minigame createMinigame(@NotNull String minigameType, @NotNull String minigameId) {
+    public @NotNull Map<String, Map<String, Minigame>> getMinigames() {
+        return Map.copyOf(minigames);
+    }
+
+    public @NotNull List<Minigame> getMinigamesList() {
+        List<Minigame> list = new ArrayList<>();
+        minigames.values().forEach(v -> list.addAll(v.values()));
+        return list;
+    }
+
+    public @Nullable Minigame getMinigame(@NotNull String minigameType, @NotNull String minigameId) {
+        return minigames.containsKey(minigameType) ? minigames.get(minigameType).get(minigameId) : null;
+    }
+
+    public void addMinigame(@NotNull String minigameType, @NotNull String minigameId, @NotNull Minigame minigame) {
         if (!isValidMinigameType(minigameType)) {
             throw new IllegalArgumentException("Invalid minigame type: " + minigameType);
         }
@@ -79,11 +61,18 @@ public final class MinigameManager {
             throw new IllegalArgumentException("Minigame ID already used: " + minigameId);
         }
 
-        Minigame minigame = registeredMinigames.get(minigameType).get();
-        minigames.computeIfAbsent(minigameType, v -> new HashMap<>()).put(minigameId, minigame);
-
         if (minigame instanceof PassiveMinigame passiveMinigame) {
             passiveMinigame.start();
+        }
+
+        minigames.computeIfAbsent(minigameType, v -> new HashMap<>()).put(minigameId, minigame);
+    }
+
+    public @NotNull Minigame createMinigame(@NotNull String minigameType, @NotNull String minigameId, boolean add) {
+        Minigame minigame = registeredMinigames.get(minigameType).get();
+
+        if (add) {
+            addMinigame(minigameType, minigameId, minigame);
         }
 
         return minigame;
@@ -98,5 +87,11 @@ public final class MinigameManager {
         }
 
         minigames.get(minigameType).remove(minigameId);
+    }
+
+    public void clearMinigames() {
+        Map<String, Map<String, Minigame>> map = Map.copyOf(minigames);
+        minigames.clear(); // clear first so leaderboards are not updated after removal
+        map.values().forEach(l -> l.values().forEach(Minigame::removeLeaderboards));
     }
 }
