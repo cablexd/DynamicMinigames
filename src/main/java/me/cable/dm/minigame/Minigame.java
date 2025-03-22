@@ -20,7 +20,7 @@ public abstract class Minigame {
     private static boolean initialized;
 
     private final Map<String, AbstractOption> options = new LinkedHashMap<>(); // LinkedHashMap for order
-    private final Map<String, Leaderboard> leaderboards = new HashMap<>();
+    private final Map<String, Leaderboard> leaderboards = new LinkedHashMap<>(); // LinkedHashMap for order
     private final List<BukkitTask> activeTasks = new ArrayList<>();
 
     private @Nullable String typeId;
@@ -76,11 +76,11 @@ public abstract class Minigame {
         leaderboards.values().forEach(Leaderboard::remove);
     }
 
-    public @Nullable Integer getLeaderboardScore(@NotNull String leaderboardId, @NotNull UUID playerUuid) {
+    public @Nullable Long getLeaderboardScore(@NotNull String leaderboardId, @NotNull UUID playerUuid) {
         return JavaPlugin.getPlugin(DynamicMinigames.class).getLeaderboardData().getValue(getTypeId(), getId(), leaderboardId, playerUuid);
     }
 
-    public void setLeaderboardScore(@NotNull String leaderboardId, @NotNull UUID playerUuid, @Nullable Integer score) {
+    public void setLeaderboardScore(@NotNull String leaderboardId, @NotNull UUID playerUuid, @Nullable Long score) {
         JavaPlugin.getPlugin(DynamicMinigames.class).getLeaderboardData().setValue(getTypeId(), getId(), leaderboardId, playerUuid, score);
     }
 
@@ -93,7 +93,7 @@ public abstract class Minigame {
         return option;
     }
 
-    public final void registerLeaderboard(@NotNull String id, @NotNull Function<Integer, String> scoreFormatter, @NotNull Comparator<Integer> scoreSorter) {
+    public final void registerLeaderboard(@NotNull String id, @NotNull Function<Long, String> scoreFormatter, @NotNull Comparator<Long> scoreSorter) {
         leaderboards.put(id, new Leaderboard(this, scoreFormatter, scoreSorter));
     }
 

@@ -1,6 +1,5 @@
 package me.cable.dm.minigame.provided;
 
-import me.cable.dm.leaderboard.Leaderboard;
 import me.cable.dm.minigame.PassiveMinigame;
 import me.cable.dm.option.*;
 import me.cable.dm.option.abs.AbstractOption;
@@ -15,6 +14,7 @@ import java.util.*;
 
 public class TrampolineMinigame extends PassiveMinigame {
 
+    private static final String LEADERBOARD_BOUNCES = "bounces";
     private static final int DEBOUNCE_TICKS = 10;
 
     private final DoubleListOption velocitiesOption;
@@ -29,7 +29,7 @@ public class TrampolineMinigame extends PassiveMinigame {
         blocksOption = registerOption("blocks", new BlockRegionListOption());
         bounceActionsOption = registerOption("bounce_actions", new ActionsOption());
 
-        registerLeaderboard("bounces", v -> Integer.toString(v), (a, b) -> b - a);
+        registerLeaderboard(LEADERBOARD_BOUNCES, v -> Long.toString(v), (a, b) -> Long.compare(b, a));
     }
 
     @Override
@@ -41,8 +41,8 @@ public class TrampolineMinigame extends PassiveMinigame {
     }
 
     private void increaseBounceScore(@NotNull Player player) {
-        setLeaderboardScore("bounces", player.getUniqueId(),
-                Objects.requireNonNullElse(getLeaderboardScore("bounces", player.getUniqueId()), 0) + 1);
+        setLeaderboardScore(LEADERBOARD_BOUNCES, player.getUniqueId(),
+                Objects.requireNonNullElse(getLeaderboardScore(LEADERBOARD_BOUNCES, player.getUniqueId()), 0L) + 1);
     }
 
     private void bounce(@NotNull Player player) {

@@ -21,8 +21,8 @@ import org.bukkit.World;
 public class Leaderboard {
 
     private final Minigame minigame;
-    private final Function<Integer, String> scoreFormatter;
-    private final Comparator<Integer> scoreSorter;
+    private final Function<Long, String> scoreFormatter;
+    private final Comparator<Long> scoreSorter;
     private final String holoId;
 
     private boolean enabled = false;
@@ -34,7 +34,7 @@ public class Leaderboard {
 
     private @Nullable Hologram hologram;
 
-    public Leaderboard(@NotNull Minigame minigame, @NotNull Function<Integer, String> scoreFormatter, Comparator<Integer> scoreSorter) {
+    public Leaderboard(@NotNull Minigame minigame, @NotNull Function<Long, String> scoreFormatter, Comparator<Long> scoreSorter) {
         this.minigame = minigame;
         this.scoreFormatter = scoreFormatter;
         this.scoreSorter = scoreSorter;
@@ -54,7 +54,7 @@ public class Leaderboard {
     private @NotNull List<Score> getScores() {
         List<Score> list = new ArrayList<>();
 
-        for (Map.Entry<UUID, Integer> entry : JavaPlugin.getPlugin(DynamicMinigames.class).getLeaderboardData().getValues(minigame.getTypeId(), minigame.getId(), getId()).entrySet()) {
+        for (Map.Entry<UUID, Long> entry : JavaPlugin.getPlugin(DynamicMinigames.class).getLeaderboardData().getValues(minigame.getTypeId(), minigame.getId(), getId()).entrySet()) {
             list.add(new Score(entry.getKey(), entry.getValue()));
         }
 
@@ -196,7 +196,7 @@ public class Leaderboard {
         update();
     }
 
-    private record Score(@NotNull UUID playerUuid, int value) {
+    private record Score(@NotNull UUID playerUuid, long value) {
 
     }
 }

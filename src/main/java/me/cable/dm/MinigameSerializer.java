@@ -28,8 +28,8 @@ public class MinigameSerializer {
         return new File(JavaPlugin.getPlugin(DynamicMinigames.class).getDataFolder(), "Minigames");
     }
 
-    private @NotNull String getOptionKey(@NotNull String optionId) {
-        return optionId.replace("_", "-");
+    private @NotNull String formatKey(@NotNull String key) {
+        return key.replace("_", "-");
     }
 
     private void saveToFile(@NotNull File file, @NotNull Minigame minigame) {
@@ -39,7 +39,7 @@ public class MinigameSerializer {
         for (Map.Entry<String, AbstractOption> entry : minigame.getOptions().entrySet()) {
             String optionId = entry.getKey();
             AbstractOption abstractOption = entry.getValue();
-            String path = "options." + getOptionKey(optionId);
+            String path = "options." + formatKey(optionId);
 
             if (abstractOption.useConfigurationSection()) {
                 ConfigurationSection cs = config.createSection(path);
@@ -57,7 +57,7 @@ public class MinigameSerializer {
         // save leaderboards
 
         for (Map.Entry<String, Leaderboard> entry : minigame.getLeaderboards().entrySet()) {
-            ConfigurationSection cs = config.createSection("leaderboards." + entry.getKey());
+            ConfigurationSection cs = config.createSection("leaderboards." + formatKey(entry.getKey()));
             entry.getValue().saveSettings(cs);
         }
 
@@ -99,7 +99,7 @@ public class MinigameSerializer {
         for (Map.Entry<String, AbstractOption> entry : minigame.getOptions().entrySet()) {
             String optionId = entry.getKey();
             AbstractOption abstractOption = entry.getValue();
-            String path = "options." + getOptionKey(optionId);
+            String path = "options." + formatKey(optionId);
 
             if (abstractOption.useConfigurationSection()) {
                 ConfigurationSection cs = config.getConfigurationSection(path);
@@ -130,7 +130,7 @@ public class MinigameSerializer {
 
         // load leaderboard settings
         for (Map.Entry<String, Leaderboard> entry : minigame.getLeaderboards().entrySet()) {
-            ConfigurationSection leaderboardSection = config.getConfigurationSection("leaderboards." + entry.getKey());
+            ConfigurationSection leaderboardSection = config.getConfigurationSection("leaderboards." + formatKey(entry.getKey()));
             entry.getValue().loadSettings(leaderboardSection == null ? new YamlConfiguration() : leaderboardSection);
         }
 
