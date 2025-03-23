@@ -220,7 +220,7 @@ public class RaceMinigame extends IntermissionMinigame {
 
             // manage race regions to ensure player completes lap
             if (finishLineRegionOption.get().contains(loc)) {
-                if (courseRegion1.getOrDefault(player, 0) == 1 && courseRegion1.getOrDefault(player, 0) == 1) {
+                if (courseRegion1.getOrDefault(player, 0) == 1 && courseRegion2.getOrDefault(player, 0) == 1) {
                     onLapComplete(player);
                 }
 
