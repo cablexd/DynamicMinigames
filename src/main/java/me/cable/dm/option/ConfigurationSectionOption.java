@@ -7,6 +7,11 @@ import org.jetbrains.annotations.NotNull;
 public class ConfigurationSectionOption extends Option<ConfigurationSection> {
 
     @Override
+    public boolean useConfigurationSection() {
+        return true;
+    }
+
+    @Override
     public boolean save(@NotNull ConfigurationSection configurationSection) {
         ConfigurationSection cs = getRaw();
         if (cs == null) return false;

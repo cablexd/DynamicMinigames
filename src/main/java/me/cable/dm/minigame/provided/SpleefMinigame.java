@@ -6,14 +6,17 @@ import me.cable.dm.option.abs.Option;
 import me.cable.dm.util.BlockRegion;
 import me.cable.dm.util.ItemUtils;
 import me.cable.dm.util.LocationReference;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.ThrowableProjectile;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.block.Block;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -68,6 +71,7 @@ public class SpleefMinigame extends IntermissionMinigame {
     private void checkPlayerCount() {
         if (alivePlayers.size() <= 1) {
             if (alivePlayers.size() == 1) {
+                removeItem(alivePlayers.getFirst());
                 winActionsOption.actions().run(alivePlayers.getFirst(), players);
             }
 
@@ -110,16 +114,19 @@ public class SpleefMinigame extends IntermissionMinigame {
         return getNamespacedKey("spleef-throw-item");
     }
 
-    private void startGame() {
-        started = true;
-        gameStartActionsOption.actions().run(alivePlayers);
+    private void removeItem(@NotNull Player player) {
+        if (itemSlotOption.get() != -1) {
+            player.getInventory().setItem(itemSlotOption.get(), null);
+        }
+    }
 
-        // give items
+    private void giveItems() {
         if (itemSlotOption.get() != -1) {
             ItemStack item = ItemUtils.item(itemOption.get());
+            item.setAmount(item.getType().getMaxStackSize());
             ItemUtils.setKey(item, getItemKey());
 
-            for (Player player : players) {
+            for (Player player : alivePlayers) {
                 player.getInventory().setItem(itemSlotOption.get(), item);
             }
         }
@@ -131,6 +138,7 @@ public class SpleefMinigame extends IntermissionMinigame {
         alivePlayers = players;
 
         fillBlocks();
+        giveItems();
 
         // teleport players to start positions
         for (int i = 0; i < alivePlayers.size(); i++) {
@@ -147,8 +155,9 @@ public class SpleefMinigame extends IntermissionMinigame {
             @Override
             public void run() {
                 if (countdown <= 0) {
-                    startGame();
                     cancel();
+                    started = true;
+                    gameStartActionsOption.actions().run(alivePlayers);
                     return;
                 }
 
@@ -166,6 +175,7 @@ public class SpleefMinigame extends IntermissionMinigame {
         for (Player player : List.copyOf(alivePlayers)) {
             if (player.getLocation().getY() < eliminationHeightOption.get()) {
                 // eliminate player
+                removeItem(player);
                 player.teleport(endPositionOption.get().location());
                 eliminationActionsOption.actions().run(player, players);
                 alivePlayers.remove(player);
@@ -214,16 +224,25 @@ public class SpleefMinigame extends IntermissionMinigame {
     @EventHandler
     private void projectileLaunchEvent(@NotNull ProjectileLaunchEvent e) {
         Projectile projectile = e.getEntity();
+
         ProjectileSource projectileSource = projectile.getShooter();
 
         if (!(projectileSource instanceof Player player) || !alivePlayers.contains(projectileSource)) {
             return;
         }
 
-        ItemStack item = player.getItemInUse();
+        ItemStack item = player.getInventory().getItemInMainHand();
+        boolean offhand = item.getType().isAir();
+        if (offhand) item = player.getInventory().getItemInOffHand();
 
-        if (item != null && ItemUtils.hasKey(item, getItemKey())) {
-            projectile.getPersistentDataContainer().set(getItemKey(), PersistentDataType.BOOLEAN, true);
+        if (ItemUtils.hasKey(item, getItemKey())) {
+            if (started) {
+                item.setAmount(item.getType().getMaxStackSize());
+                player.getInventory().setItem(offhand ? EquipmentSlot.OFF_HAND : EquipmentSlot.HAND, item);
+                projectile.getPersistentDataContainer().set(getItemKey(), PersistentDataType.BOOLEAN, true);
+            } else {
+                e.setCancelled(true);
+            }
         }
     }
 
