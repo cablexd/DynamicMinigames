@@ -7,13 +7,14 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class BlockRegionListOption extends ListOption<BlockRegion> {
 
     @Override
     public @NotNull Object listSerialize(@NotNull BlockRegion blockRegion) {
-        Map<String, Object> map = new HashMap<>();
+        Map<String, Object> map =  new LinkedHashMap<>();
         map.put("world", blockRegion.worldName());
         map.put("x1", blockRegion.x1());
         map.put("y1", blockRegion.y1());

@@ -7,13 +7,14 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class LocationListOption extends ListOption<LocationReference> {
 
     @Override
     public @NotNull Object listSerialize(@NotNull LocationReference locationReference) {
-        Map<String, Object> map = new HashMap<>();
+        Map<String, Object> map =  new LinkedHashMap<>();
         map.put("world", locationReference.worldName());
         map.put("x", locationReference.x());
         map.put("y", locationReference.y());

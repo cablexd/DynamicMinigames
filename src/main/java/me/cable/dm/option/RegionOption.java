@@ -7,6 +7,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class RegionOption extends Option<Region> {
@@ -16,7 +17,7 @@ public class RegionOption extends Option<Region> {
         Region region = _get();
         if (region == null) return null;
 
-        Map<String, Object> map = new HashMap<>();
+        Map<String, Object> map =  new LinkedHashMap<>();
         map.put("world", region.worldName());
         map.put("x1", region.x1());
         map.put("y1", region.y1());

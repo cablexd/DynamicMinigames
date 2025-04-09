@@ -23,7 +23,7 @@ public class MinigameSerializer {
     private final MinigameManager minigameManager;
 
     private YamlConfiguration globalMinigameDefaults;
-    private Map<String, YamlConfiguration> minigameDefaults = new HashMap<>();
+    private final Map<String, YamlConfiguration> minigameDefaults = new HashMap<>();
 
     public MinigameSerializer(@NotNull DynamicMinigames dynamicMinigames) {
         this.dynamicMinigames = dynamicMinigames;

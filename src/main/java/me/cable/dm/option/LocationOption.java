@@ -10,6 +10,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class LocationOption extends Option<LocationReference> {
@@ -33,7 +34,7 @@ public class LocationOption extends Option<LocationReference> {
         LocationReference locationReference = _get();
         if (locationReference == null) return null;
 
-        Map<String, Object> map = new HashMap<>();
+        Map<String, Object> map =  new LinkedHashMap<>();
         map.put("world", locationReference.worldName());
         map.put("x", locationReference.x());
         map.put("y", locationReference.y());

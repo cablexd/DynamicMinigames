@@ -23,9 +23,8 @@ public class HighblockMinigame extends IntermissionMinigame {
     private final StringOption blockMaterialOption;
     private final BlockRegionOption placeRegionOption;
     private final BlockRegionOption clearRegionOption;
-
-    private final ActionsOption gameEndActionsOption;
     private final LocationListOption startPositionsOption;
+    private final ActionsOption gameEndActionsOption;
 
     private List<Player> players;
     private List<Player> alivePlayers;
@@ -41,9 +40,8 @@ public class HighblockMinigame extends IntermissionMinigame {
         blockMaterialOption = registerOption("block_material", new StringOption());
         placeRegionOption = registerOption("place_region", new BlockRegionOption());
         clearRegionOption = registerOption("clear_region", new BlockRegionOption());
-
-        gameEndActionsOption = registerOption("game_end_actions", new ActionsOption());
         startPositionsOption = registerOption("start_positions", new LocationListOption());
+        gameEndActionsOption = registerOption("game_end_actions", new ActionsOption());
     }
 
     @Override

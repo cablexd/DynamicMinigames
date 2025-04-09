@@ -272,7 +272,10 @@ public class SpleefMinigame extends IntermissionMinigame {
 
         @Override
         public @Nullable Object serialize() {
-            return _get();
+            if (_get() == null) return null;
+            Map<String, Object> result = new HashMap<>();
+            _get().forEach((a, b) -> result.put(a, b.toString()));
+            return result;
         }
 
         @Override

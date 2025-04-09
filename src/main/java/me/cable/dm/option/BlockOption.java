@@ -10,6 +10,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class BlockOption extends Option<BlockReference> {
@@ -33,7 +34,7 @@ public class BlockOption extends Option<BlockReference> {
         BlockReference blockReference = _get();
         if (blockReference == null) return null;
 
-        Map<String, Object> values = new HashMap<>();
+        Map<String, Object> values = new LinkedHashMap<>();
         values.put("world", blockReference.worldName());
         values.put("x", blockReference.x());
         values.put("y", blockReference.y());
