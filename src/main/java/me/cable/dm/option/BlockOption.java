@@ -9,6 +9,9 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class BlockOption extends Option<BlockReference> {
 
     @Override
@@ -26,32 +29,27 @@ public class BlockOption extends Option<BlockReference> {
     }
 
     @Override
-    public boolean useConfigurationSection() {
-        return true;
+    public @Nullable Object serialize() {
+        BlockReference blockReference = _get();
+        if (blockReference == null) return null;
+
+        Map<String, Object> values = new HashMap<>();
+        values.put("world", blockReference.worldName());
+        values.put("x", blockReference.x());
+        values.put("y", blockReference.y());
+        values.put("z", blockReference.z());
+        return values;
     }
 
     @Override
-    public boolean save(@NotNull ConfigurationSection configurationSection) {
-        BlockReference blockReference = getRaw();
-        if (blockReference == null) return false;
-
-        configurationSection.set("world", blockReference.worldName());
-        configurationSection.set("x", blockReference.x());
-        configurationSection.set("y", blockReference.y());
-        configurationSection.set("z", blockReference.z());
-        return true;
-    }
-
-    @Override
-    public void load(@NotNull ConfigurationSection configurationSection) {
+    public @Nullable BlockReference deserialize(@NotNull ConfigurationSection configurationSection) {
         String world = configurationSection.getString("world");
-        if (world == null) throw new IllegalStateException("Missing world name");
 
-        setRaw(new BlockReference(
+        return (world == null) ? null : new BlockReference(
                 world,
                 configurationSection.getInt("x"),
                 configurationSection.getInt("y"),
                 configurationSection.getInt("z")
-        ));
+        );
     }
 }

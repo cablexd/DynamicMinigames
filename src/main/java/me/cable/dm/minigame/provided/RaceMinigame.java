@@ -20,7 +20,7 @@ public class RaceMinigame extends IntermissionMinigame {
 
     /*
         TODO:
-        add finish position
+        add finish position (not location, rank)
         max time limit
      */
 
@@ -74,7 +74,7 @@ public class RaceMinigame extends IntermissionMinigame {
 
     @Override
     public void start(@NotNull List<Player> players) {
-        this.players = players;
+        this.players = new ArrayList<>(players);
 
         // teleport players to start position
         for (Player player : players) {

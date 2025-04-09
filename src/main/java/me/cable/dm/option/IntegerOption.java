@@ -1,10 +1,8 @@
 package me.cable.dm.option;
 
 import me.cable.dm.option.abs.Option;
-import me.cable.dm.util.PlayerTextInput;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -33,14 +31,12 @@ public class IntegerOption extends Option<Integer> {
     }
 
     @Override
-    public @Nullable Object save() {
-        return getRaw();
+    public @Nullable Object serialize() {
+        return _get();
     }
 
     @Override
-    public void load(@Nullable Object object) {
-        if (object instanceof Integer v) {
-            setRaw(v);
-        }
+    public @Nullable Integer deserialize(@NotNull Object object) {
+        return (object instanceof Integer i) ? i : null;
     }
 }

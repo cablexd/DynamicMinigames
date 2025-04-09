@@ -3,6 +3,7 @@ package me.cable.dm.option;
 import me.cable.dm.option.abs.Option;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.configuration.ConfigurationSection;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -31,14 +32,12 @@ public class DoubleOption extends Option<Double> {
     }
 
     @Override
-    public @Nullable Object save() {
-        return getRaw();
+    public @Nullable Object serialize() {
+        return _get();
     }
 
     @Override
-    public void load(@Nullable Object object) {
-        if (object instanceof Number v) {
-            setRaw(v.doubleValue());
-        }
+    public @Nullable Double deserialize(@NotNull Object object) {
+        return (object instanceof Number n) ? n.doubleValue() : null;
     }
 }

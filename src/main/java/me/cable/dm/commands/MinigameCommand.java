@@ -2,7 +2,7 @@ package me.cable.dm.commands;
 
 import me.cable.dm.MinigameManager;
 import me.cable.dm.minigame.Minigame;
-import me.cable.dm.option.abs.AbstractOption;
+import me.cable.dm.option.abs.Option;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -94,14 +94,14 @@ public class MinigameCommand extends AbstractCommand {
                 }
 
                 String optionId = args[3];
-                AbstractOption abstractOption = minigame.getOptions().get(optionId);
+                Option<?> option = minigame.getOptions().get(optionId);
 
-                if (abstractOption == null) {
+                if (option == null) {
                     commandSender.sendMessage(ChatColor.RED + "The option " + ChatColor.GOLD + optionId + ChatColor.RED + " does not exist!");
                     return true;
                 }
 
-                if (!abstractOption.canSetInGame()) {
+                if (!option.canSetInGame()) {
                     commandSender.sendMessage(ChatColor.RED + "This option can only be modified in the config file!");
                     return true;
                 }
@@ -114,7 +114,7 @@ public class MinigameCommand extends AbstractCommand {
                     extraArgs = Arrays.copyOfRange(args, 4, args.length);
                 }
 
-                String appendToUsage = abstractOption.setInGame(commandSender, extraArgs);
+                String appendToUsage = option.setInGame(commandSender, extraArgs);
 
                 if (appendToUsage != null) {
                     commandSender.sendMessage(usage + appendToUsage);

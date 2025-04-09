@@ -7,12 +7,12 @@ import org.jetbrains.annotations.Nullable;
 public class StringListOption extends ListOption<String> {
 
     @Override
-    public @NotNull Object listSave(@NotNull String string) {
+    public @NotNull Object listSerialize(@NotNull String string) {
         return string;
     }
 
     @Override
-    public @Nullable String listLoad(@NotNull Object object) {
+    public @Nullable String listDeserialize(@NotNull Object object) {
         return (object instanceof String string) ? string : null;
     }
 }

@@ -6,29 +6,27 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class LocationListOption extends ListOption<LocationReference> {
 
     @Override
-    public boolean useConfigurationSection() {
-        return true;
+    public @NotNull Object listSerialize(@NotNull LocationReference locationReference) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("world", locationReference.worldName());
+        map.put("x", locationReference.x());
+        map.put("y", locationReference.y());
+        map.put("z", locationReference.z());
+        map.put("yaw", locationReference.yaw());
+        map.put("pitch", locationReference.pitch());
+        return map;
     }
 
     @Override
-    public void listSave(@NotNull LocationReference locationReference, @NotNull ConfigurationSection configurationSection) {
-        configurationSection.set("world", locationReference.worldName());
-        configurationSection.set("x", locationReference.x());
-        configurationSection.set("y", locationReference.y());
-        configurationSection.set("z", locationReference.z());
-        configurationSection.set("yaw", locationReference.yaw());
-        configurationSection.set("pitch", locationReference.pitch());
-    }
-
-    @Override
-    public @Nullable LocationReference listLoad(@NotNull ConfigurationSection configurationSection) {
+    public @Nullable LocationReference listDeserialize(@NotNull ConfigurationSection configurationSection) {
         String world = configurationSection.getString("world");
-        if (world == null) throw new IllegalStateException("Missing world name");
-
-        return new LocationReference(
+        return (world == null) ? null : new LocationReference(
                 world,
                 configurationSection.getDouble("x"),
                 configurationSection.getDouble("y"),

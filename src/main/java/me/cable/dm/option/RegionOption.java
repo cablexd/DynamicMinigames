@@ -6,34 +6,31 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class RegionOption extends Option<Region> {
 
     @Override
-    public boolean useConfigurationSection() {
-        return true;
+    public @Nullable Object serialize() {
+        Region region = _get();
+        if (region == null) return null;
+
+        Map<String, Object> map = new HashMap<>();
+        map.put("world", region.worldName());
+        map.put("x1", region.x1());
+        map.put("y1", region.y1());
+        map.put("z1", region.z1());
+        map.put("x2", region.x2());
+        map.put("y2", region.y2());
+        map.put("z2", region.z2());
+        return map;
     }
 
     @Override
-    public boolean save(@NotNull ConfigurationSection configurationSection) {
-        Region region = getRaw();
-        if (region == null) return false;
-
-        configurationSection.set("world", region.worldName());
-        configurationSection.set("x1", region.x1());
-        configurationSection.set("y1", region.y1());
-        configurationSection.set("z1", region.z1());
-        configurationSection.set("x2", region.x2());
-        configurationSection.set("y2", region.y2());
-        configurationSection.set("z2", region.z2());
-        return true;
-    }
-
-    @Override
-    public void load(@NotNull ConfigurationSection configurationSection) {
+    public @Nullable Region deserialize(@NotNull ConfigurationSection configurationSection) {
         String world = configurationSection.getString("world");
-        if (world == null) throw new IllegalStateException("Missing world name");
-
-        setRaw(new Region(
+        return (world == null) ? null : new Region(
                 world,
                 configurationSection.getDouble("x1"),
                 configurationSection.getDouble("y1"),
@@ -41,6 +38,6 @@ public class RegionOption extends Option<Region> {
                 configurationSection.getDouble("x2"),
                 configurationSection.getDouble("y2"),
                 configurationSection.getDouble("z2")
-        ));
+        );
     }
 }

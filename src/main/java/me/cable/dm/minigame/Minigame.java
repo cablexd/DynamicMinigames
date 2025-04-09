@@ -4,7 +4,7 @@ import me.cable.dm.DynamicMinigames;
 import me.cable.dm.leaderboard.Leaderboard;
 import org.bukkit.NamespacedKey;
 import me.cable.dm.MinigameManager;
-import me.cable.dm.option.abs.AbstractOption;
+import me.cable.dm.option.abs.Option;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -19,7 +19,7 @@ public abstract class Minigame {
 
     private static boolean initialized;
 
-    private final Map<String, AbstractOption> options = new LinkedHashMap<>(); // LinkedHashMap for order
+    private final Map<String, Option<?>> options = new LinkedHashMap<>(); // LinkedHashMap for order
     private final Map<String, Leaderboard> leaderboards = new LinkedHashMap<>(); // LinkedHashMap for order
     private final List<BukkitTask> activeTasks = new ArrayList<>();
 
@@ -84,7 +84,7 @@ public abstract class Minigame {
         JavaPlugin.getPlugin(DynamicMinigames.class).getLeaderboardData().setValue(getTypeId(), getId(), leaderboardId, playerUuid, score);
     }
 
-    public final <T extends AbstractOption> @NotNull T registerOption(@NotNull String id, @NotNull T option) {
+    public final <T extends Option> @NotNull T registerOption(@NotNull String id, @NotNull T option) {
         if (options.containsKey(id)) {
             throw new IllegalArgumentException("Option with ID already exists: " + id);
         }
@@ -124,11 +124,7 @@ public abstract class Minigame {
         activeTasks.clear();
     }
 
-    public void onOptionChange(@NotNull String optionId, @NotNull AbstractOption abstractOption) {
-        // TODO: call
-    }
-
-    public final @NotNull Map<String, AbstractOption> getOptions() {
+    public final @NotNull Map<String, Option<?>> getOptions() {
         return new LinkedHashMap<>(options);
     }
 

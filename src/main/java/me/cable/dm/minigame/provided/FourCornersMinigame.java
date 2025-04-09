@@ -225,18 +225,15 @@ public class FourCornersMinigame extends IntermissionMinigame {
     private static class PlatformsOption extends ListOption<Platform> {
 
         @Override
-        public boolean useConfigurationSection() {
-            return true;
+        public @NotNull Object listSerialize(@NotNull Platform platform) {
+            return Map.of(
+                    "name", platform.name,
+                    "selected-actions", platform.selectedActions
+            );
         }
 
         @Override
-        public void listSave(@NotNull Platform platform, @NotNull ConfigurationSection configurationSection) {
-            configurationSection.set("name", platform.name);
-            configurationSection.set("selected-actions", platform.selectedActions);
-        }
-
-        @Override
-        public @Nullable Platform listLoad(@NotNull ConfigurationSection configurationSection) {
+        public @Nullable Platform listDeserialize(@NotNull ConfigurationSection configurationSection) {
             return new Platform(
                     configurationSection.getString("name", "Platform"),
                     configurationSection.getStringList("selected-actions")

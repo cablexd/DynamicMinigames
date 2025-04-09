@@ -18,7 +18,7 @@ public abstract class IntermissionMinigame extends Minigame implements Listener 
 
     protected final IntegerOption countdownOption;
     protected final IntegerOption minPlayersOption;
-    protected final IntegerOption waitingMessagePeriod;
+    protected final IntegerOption waitingActionsPeriod;
     protected final ActionsOption countdownActionsOption;
     protected final ActionsOption waitingActionsOption;
 
@@ -33,7 +33,7 @@ public abstract class IntermissionMinigame extends Minigame implements Listener 
     public IntermissionMinigame() {
         countdownOption = registerOption("countdown", new IntegerOption());
         minPlayersOption = registerOption("min_players", new IntegerOption());
-        waitingMessagePeriod = registerOption("waiting_message_period", new IntegerOption());
+        waitingActionsPeriod = registerOption("waiting_actions_period", new IntegerOption());
         countdownActionsOption = registerOption("countdown_actions", new ActionsOption());
         waitingActionsOption = registerOption("waiting_actions", new ActionsOption());
 
@@ -98,7 +98,7 @@ public abstract class IntermissionMinigame extends Minigame implements Listener 
                         intermissionMinigame.gameState = GameState.RUNNING;
                         intermissionMinigame.startActionsOption.actions().run(waitingPlayers);
                         Bukkit.getPluginManager().registerEvents(intermissionMinigame, dynamicMinigames);
-                        intermissionMinigame.start(new ArrayList<>(waitingPlayers));
+                        intermissionMinigame.start(List.copyOf(waitingPlayers));
                     }
 
                     intermissionMinigame.countdown--;
@@ -114,7 +114,7 @@ public abstract class IntermissionMinigame extends Minigame implements Listener 
                                 .placeholder("min_players", intermissionMinigame.minPlayersOption.get())
                                 .placeholder("players", waitingPlayers.size())
                                 .run(waitingPlayers);
-                        intermissionMinigame.countdown = intermissionMinigame.waitingMessagePeriod.get();
+                        intermissionMinigame.countdown = intermissionMinigame.waitingActionsPeriod.get();
                     }
                 }
             }

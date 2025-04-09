@@ -28,14 +28,12 @@ public class StringOption extends Option<String> {
     }
 
     @Override
-    public @Nullable Object save() {
-        return getRaw();
+    public @Nullable Object serialize() {
+        return _get();
     }
 
     @Override
-    public void load(@Nullable Object object) {
-        if (object instanceof String string) {
-            setRaw(string);
-        }
+    public @Nullable String deserialize(@NotNull Object object) {
+        return (object instanceof String s) ? s : null;
     }
 }

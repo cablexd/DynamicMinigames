@@ -2,7 +2,7 @@ package me.cable.dm.minigame.provided;
 
 import me.cable.dm.minigame.PassiveMinigame;
 import me.cable.dm.option.*;
-import me.cable.dm.option.abs.AbstractOption;
+import me.cable.dm.option.abs.Option;
 import me.cable.dm.util.BlockRegion;
 import me.cable.dm.util.Region;
 import org.bukkit.World;
@@ -30,14 +30,6 @@ public class TrampolineMinigame extends PassiveMinigame {
         bounceActionsOption = registerOption("bounce_actions", new ActionsOption());
 
         registerLeaderboard(LEADERBOARD_BOUNCES, v -> Long.toString(v), (a, b) -> Long.compare(b, a));
-    }
-
-    @Override
-    public void onOptionChange(@NotNull String optionId, @NotNull AbstractOption abstractOption) {
-        // reset bounce regions when block regions change
-        if (optionId.equals("blocks")) {
-            bounceRegions = null;
-        }
     }
 
     private void increaseBounceScore(@NotNull Player player) {

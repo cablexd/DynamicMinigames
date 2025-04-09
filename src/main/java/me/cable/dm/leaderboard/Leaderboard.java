@@ -96,10 +96,11 @@ public class Leaderboard {
 
         List<Score> scores = getScores();
         List<String> holoLines = new ArrayList<>();
+        int position = 1;
 
         if (title != null) holoLines.add(title);
 
-        for (int i = 0; i < Math.min(scores.size(), getEntries()); i++) {
+        for (int i = 0; holoLines.size() < getEntries() && i < scores.size(); i++) {
             Score score = scores.get(i);
             UUID playerUuid = score.playerUuid();
 
@@ -110,7 +111,7 @@ public class Leaderboard {
             String playerName = Bukkit.getOfflinePlayer(playerUuid).getName();
             String line = getFormat()
                     .replace("{player}", playerName == null ? "N/A" : playerName)
-                    .replace("{position}", Integer.toString(i + 1))
+                    .replace("{position}", Integer.toString(position++))
                     .replace("{score}", scoreFormatter.apply(score.value()));
             holoLines.add(Utils.formatColor(line));
         }

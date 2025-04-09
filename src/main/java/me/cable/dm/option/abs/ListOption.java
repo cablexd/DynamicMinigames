@@ -1,107 +1,144 @@
 package me.cable.dm.option.abs;
 
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
-public non-sealed abstract class ListOption<T> extends AbstractOption {
+public abstract class ListOption<T> extends Option<List<T>> {
 
-    private final List<T> list = new ArrayList<>();
+    @Override
+    public @NotNull List<T> get() {
+        if (_get() != null) {
+            return List.copyOf(_get());
+        }
+        if (_getDefault() != null) {
+            return List.copyOf(_getDefault());
+        }
 
-    public final @NotNull List<T> get() {
-        return List.copyOf(list);
+        throw new IllegalStateException("Option has no value");
     }
 
     public final @NotNull T get(int i) {
-        return list.get(i);
+        return get().get(i);
     }
 
-    public final void add(@NotNull T value) {
-        list.add(value);
-    }
-
-    public final @NotNull T remove(int i) {
-        return list.remove(i);
+    public final void add(@NotNull T t) {
+        if (_get() != null) {
+            _get().add(t);
+        }
     }
 
     public final int size() {
-        return list.size();
+        return get().size();
     }
 
     public final void clear() {
-        list.clear();
+        if (_get() != null) {
+            _get().clear();
+        }
+        if (_getDefault() != null) {
+            _getDefault().clear();
+        }
     }
 
     @Override
-    public final @NotNull Object save() {
-        // not using configuration section: save to single list
-        List<Object> l = new ArrayList<>();
+    public final @Nullable Object serialize() {
+        if (_get() == null) {
+            // no value set: save default
+            return null;
+        }
+        if (_get().isEmpty()) {
+            return Collections.emptyList();
+        }
+        Object serializationExample = listSerialize(_get().getFirst());
 
-        for (T t : list) {
-            l.add(listSave(t));
+        if (serializationExample instanceof ConfigurationSection || serializationExample instanceof Map<?, ?>) { // should be serialized as configuration sections
+            // get configuration section from each element
+            ConfigurationSection optionSection = new YamlConfiguration();
+            int i = 0;
+
+            for (T t : _get()) {
+                Object o = listSerialize(t); // should be Map<String, Object>
+
+                if (o instanceof ConfigurationSection elementCs) {
+                    // set configuration section directly
+                    optionSection.set(Integer.toString(i++), elementCs);
+                } else if (o instanceof Map<?, ?> map) {
+                    // set key/value pairs to newly created element section
+                    ConfigurationSection elementCs = new YamlConfiguration();
+                    map.forEach((k, v) -> elementCs.set(k.toString(), v));
+                    optionSection.set(Integer.toString(i++), elementCs);
+                } else {
+                    throw new IllegalStateException("Invalid return: return must be a ConfigurationSection or a Map<String, Object>");
+                }
+            }
+
+            return optionSection;
         }
 
+        // serialize and add each element
+        List<Object> l = new ArrayList<>();
+        _get().forEach(v -> l.add(listSerialize(v)));
         return l;
     }
 
     @Override
-    public final boolean save(@NotNull ConfigurationSection configurationSection) {
-        // using configuration section: save each item to own configuration section
-        for (int i = 0; i < list.size(); i++) {
-            T t = list.get(i);
-            ConfigurationSection csItem = configurationSection.createSection(Integer.toString(i));
-            listSave(t, csItem);
+    public final @Nullable List<T> deserialize(@NotNull Object object) {
+        List<T> result = new ArrayList<>();
+
+        if (object instanceof List<?> list) {
+            for (Object o : list) {
+                if (o == null) {
+                    continue;
+                }
+
+                T t = listDeserialize(o);
+
+                if (t != null) {
+                    result.add(t);
+                }
+            }
+        } else if (object instanceof ConfigurationSection configurationSection) {
+            for (String key : configurationSection.getKeys(false)) {
+                ConfigurationSection elementSection = configurationSection.getConfigurationSection(key);
+                if (elementSection == null) continue;
+
+                T t = listDeserialize((Object) elementSection);
+
+                if (t != null) {
+                    result.add(t);
+                }
+            }
+        } else {
+            return null;
         }
 
-        return true;
+        return result;
     }
 
     @Override
-    public final void load(@Nullable Object object) {
-        // not using configuration section: load items from single list
-        if (object instanceof List<?> l) {
-            for (Object o : l) {
-                T t = listLoad(o);
-
-                if (t != null) {
-                    add(t);
-                }
-            }
-        }
+    public final @Nullable List<T> deserialize(@NotNull ConfigurationSection configurationSection) {
+        throw new UnsupportedOperationException("Should not be called");
     }
 
-    @Override
-    public final void load(@NotNull ConfigurationSection configurationSection) {
-        // using configuration section: load each item from own configuration section
-        for (String key : configurationSection.getKeys(false)) {
-            ConfigurationSection cs = configurationSection.getConfigurationSection(key);
-
-            if (cs != null) {
-                T t = listLoad(cs);
-
-                if (t != null) {
-                    add(t);
-                }
-            }
-        }
-    }
-
-    public @NotNull Object listSave(@NotNull T t) {
+    /*
+        Return Map<Object, String> to save as configuration section.
+     */
+    public @NotNull Object listSerialize(@NotNull T t) {
         return t;
     }
 
-    public void listSave(@NotNull T t, @NotNull ConfigurationSection configurationSection) {
-        // empty
+    /*
+        Will provide configuration section if is a list of configuration section.
+     */
+    public @Nullable T listDeserialize(@NotNull Object object) {
+        return (object instanceof ConfigurationSection configurationSection) ? listDeserialize(configurationSection) : null;
     }
 
-    public @Nullable T listLoad(@NotNull Object object) {
-        return null;
-    }
-
-    public @Nullable T listLoad(@NotNull ConfigurationSection configurationSection) {
+    public @Nullable T listDeserialize(@NotNull ConfigurationSection configurationSection) {
         return null;
     }
 }

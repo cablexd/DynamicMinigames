@@ -6,12 +6,10 @@ import me.cable.dm.option.abs.Option;
 import me.cable.dm.util.BlockRegion;
 import me.cable.dm.util.ItemUtils;
 import me.cable.dm.util.LocationReference;
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
-import org.bukkit.entity.ThrowableProjectile;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
@@ -27,7 +25,9 @@ import org.bukkit.event.entity.ProjectileLaunchEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.entity.Projectile;
 import org.bukkit.projectiles.ProjectileSource;
+import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -135,7 +135,7 @@ public class SpleefMinigame extends IntermissionMinigame {
     @Override
     public void start(@NotNull List<Player> players) {
         this.players = List.copyOf(players);
-        alivePlayers = players;
+        alivePlayers = new ArrayList<>(players);
 
         fillBlocks();
         giveItems();
@@ -271,23 +271,12 @@ public class SpleefMinigame extends IntermissionMinigame {
     private static class SpleefBlocksOption extends Option<Map<String, Material>> {
 
         @Override
-        public boolean useConfigurationSection() {
-            return true;
+        public @Nullable Object serialize() {
+            return _get();
         }
 
         @Override
-        public boolean save(@NotNull ConfigurationSection configurationSection) {
-            if (getRaw() == null) return false;
-
-            for (Map.Entry<String, Material> entry : getRaw().entrySet()) {
-                configurationSection.set(entry.getKey(), entry.getValue().toString());
-            }
-
-            return true;
-        }
-
-        @Override
-        public void load(@NotNull ConfigurationSection configurationSection) {
+        public @Nullable Map<String, Material> deserialize(@NotNull ConfigurationSection configurationSection) {
             Map<String, Material> map = new HashMap<>();
 
             for (String key : configurationSection.getKeys(false)) {
@@ -301,7 +290,7 @@ public class SpleefMinigame extends IntermissionMinigame {
                 }
             }
 
-            setRaw(map);
+            return map;
         }
     }
 }

@@ -7,12 +7,12 @@ import org.jetbrains.annotations.Nullable;
 public class DoubleListOption extends ListOption<Double> {
 
     @Override
-    public @NotNull Object listSave(@NotNull Double val) {
-        return val;
+    public @NotNull Object listSerialize(@NotNull Double v) {
+        return v;
     }
 
     @Override
-    public @Nullable Double listLoad(@NotNull Object object) {
+    public @Nullable Double listDeserialize(@NotNull Object object) {
         return (object instanceof Number v) ? v.doubleValue() : null;
     }
 }

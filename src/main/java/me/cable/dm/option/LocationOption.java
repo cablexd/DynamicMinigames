@@ -1,15 +1,16 @@
 package me.cable.dm.option;
 
 import me.cable.dm.option.abs.Option;
-import me.cable.dm.util.BlockReference;
 import me.cable.dm.util.LocationReference;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
-import org.bukkit.block.Block;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class LocationOption extends Option<LocationReference> {
 
@@ -28,36 +29,32 @@ public class LocationOption extends Option<LocationReference> {
     }
 
     @Override
-    public boolean useConfigurationSection() {
-        return true;
+    public @Nullable Object serialize() {
+        LocationReference locationReference = _get();
+        if (locationReference == null) return null;
+
+        Map<String, Object> map = new HashMap<>();
+        map.put("world", locationReference.worldName());
+        map.put("x", locationReference.x());
+        map.put("y", locationReference.y());
+        map.put("z", locationReference.z());
+        map.put("yaw", locationReference.yaw());
+        map.put("pitch", locationReference.pitch());
+        return map;
+
+
     }
 
     @Override
-    public boolean save(@NotNull ConfigurationSection configurationSection) {
-        LocationReference locationReference = getRaw();
-        if (locationReference == null) return false;
-
-        configurationSection.set("world", locationReference.worldName());
-        configurationSection.set("x", locationReference.x());
-        configurationSection.set("y", locationReference.y());
-        configurationSection.set("z", locationReference.z());
-        configurationSection.set("yaw", locationReference.yaw());
-        configurationSection.set("pitch", locationReference.pitch());
-        return true;
-    }
-
-    @Override
-    public void load(@NotNull ConfigurationSection configurationSection) {
+    public @Nullable LocationReference deserialize(@NotNull ConfigurationSection configurationSection) {
         String world = configurationSection.getString("world");
-        if (world == null) throw new IllegalStateException("Missing world name");
-
-        setRaw(new LocationReference(
+        return (world == null) ? null : new LocationReference(
                 world,
                 configurationSection.getDouble("x"),
                 configurationSection.getDouble("y"),
                 configurationSection.getDouble("z"),
                 (float) configurationSection.getDouble("yaw"),
                 (float) configurationSection.getDouble("pitch")
-        ));
+        );
     }
 }
