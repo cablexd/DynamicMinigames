@@ -27,10 +27,7 @@ import org.bukkit.entity.Projectile;
 import org.bukkit.projectiles.ProjectileSource;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class SpleefMinigame extends IntermissionMinigame {
 
@@ -141,8 +138,10 @@ public class SpleefMinigame extends IntermissionMinigame {
         giveItems();
 
         // teleport players to start positions
+        List<LocationReference> startPositions = startPositionsOption.getShuffled();
+
         for (int i = 0; i < alivePlayers.size(); i++) {
-            LocationReference locationReference = startPositionsOption.get(i % startPositionsOption.size());
+            LocationReference locationReference = startPositions.get(i % startPositions.size());
 
             if (locationReference.world() != null) {
                 alivePlayers.get(i).teleport(locationReference.location());

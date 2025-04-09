@@ -21,6 +21,12 @@ public abstract class ListOption<T> extends Option<List<T>> {
         throw new IllegalStateException("Option has no value");
     }
 
+    public @NotNull List<T> getShuffled() {
+        List<T> list = new ArrayList<>(get());
+        Collections.shuffle(list);
+        return list;
+    }
+
     public final @NotNull T get(int i) {
         return get().get(i);
     }

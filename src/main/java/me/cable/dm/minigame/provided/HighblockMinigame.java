@@ -53,8 +53,10 @@ public class HighblockMinigame extends IntermissionMinigame {
             points.put(player.getUniqueId(), 0);
         }
 
+        List<LocationReference> startPositions = startPositionsOption.getShuffled();
+
         for (int i = 0; i < alivePlayers.size(); i++) {
-            LocationReference locationReference = startPositionsOption.get(i % startPositionsOption.size());
+            LocationReference locationReference = startPositions.get(i % startPositions.size());
             if (locationReference.world() != null) {
                 alivePlayers.get(i).teleport(locationReference.location());
             }
